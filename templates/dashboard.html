@@ -1,351 +1,170 @@
 {% extends "base.html" %}
 {% block title %} Dashboard {% endblock %}
-
 {% load static %}
-
 {% block content %}
 <!--================Top cards ===============-->
 <div class="p-5 m-3 justify-start font-normal text-xl text-black">
     {% if user.is_authenticated %}
-    <h1> Welcome, <span class="text-gray-500 font-bold">{{ user.username }} </span> </h1>
+    <h1> Welcome, <span class="text-gray-500 font-bold">{{ user.username }}</span> </h1>
     {% else %}
     <h1> Welcome, <span class="text-gray-500 font-bold">Guest</span> </h1>
     {% endif %}
- 
-
 </div>
-<div class="flex flex-row bg-white item-center justify-center mx-auto p-5">
 
-    <!---=======Firsr card====-->
-    <div class="ponter-event-none">
-        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-blue-500  shadow-lg ring-1 px-4 mx-4 ring-blue-200 ring-inset">
+<!-- Branch Filter Dropdown (Visible Only to Admins) -->
+{% if user.user_type == 1 %}
+<div class="flex justify-between items-center mb-4">
+    <form method="get" class="mb-3">
+        <label for="branch" class="mr-2 text-gray-700">Filter by Branch:</label>
+        <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+            <option value="">All Branches</option>
+            {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
+                    {{ branch.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+{% endif %}
+
+<!-- Display User's Branch (Non-Admin Users) -->
+{% if user.branch and user.user_type != 1 %}
+<div class="mb-4 text-gray-700">
+    <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+</div>
+{% endif %}
+
+<div class="flex flex-row bg-white item-center justify-center mx-auto p-5">
+    <!---=======First card====-->
+    <div class="pointer-event-none">
+        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-blue-500 shadow-lg ring-1 px-4 mx-4 ring-blue-200 ring-inset">
             <div class="m-4 p-4 mt-6 pt-6 pr-5 rounded-full h-20 w-20 bg-white justify-center item-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8 m-1">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
                 </svg>
-                  
-
             </div>
-
             <div class="flex flex-col m-4 p-4">
-                {% if total_appointments %}
                 <div class="font-bold text-2xl text-white">{{ total_appointments }}</div>
                 <div class="text-xl text-white">Appointments</div>
-                {% else %}
-                <div class="font-bold text-2xl text-white">30</div>
-                <div class="text-xl text-white">Appointments</div>
-                {% endif %}
             </div>
-    
-
         </div>
-
-        
-
     </div>
 
-
-     <!---=======Second card====-->
-     <div class="ponter-event-none">
-        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-violet-600  shadow-lg ring-1 px-4 mx-4 ring-violet-600 ring-inset">
+    <!---=======Second card====-->
+    <div class="pointer-event-none">
+        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-violet-600 shadow-lg ring-1 px-4 mx-4 ring-violet-600 ring-inset">
             <div class="m-4 p-4 mt-6 pt-6 rounded-full h-20 w-20 bg-white justify-center item-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-                  </svg>
-
+                </svg>
             </div>
-
             <div class="flex flex-col m-4 p-4">
-                {% if total_patients %}
                 <div class="font-bold text-2xl text-white">{{ total_patients }}</div>
                 <div class="text-xl text-white">Patients</div>
-                {% else %}
-                <div class="font-bold text-2xl text-white">170</div>
-                <div class="text-xl text-white">Patients</div>
-                {% endif %}
-
             </div>
-    
-
         </div>
-
-        
-
     </div>
 
-     <!---=======Third card====-->
-     <div class="ponter-event-none">
-        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-fuchsia-500  shadow-lg ring-1 px-4 mx-4 ring-fuchsia-500 ring-inset">
+    <!---=======Third card====-->
+    <div class="pointer-event-none">
+        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-fuchsia-500 shadow-lg ring-1 px-4 mx-4 ring-fuchsia-500 ring-inset">
             <div class="m-4 p-4 mt-6 pt-6 rounded-full h-20 w-20 bg-white justify-center item-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" />
-                  </svg>
-                  
-
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 0 0 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" />
+                </svg>
             </div>
-
             <div class="flex flex-col m-4 p-4">
-                {% if total_quotations %}
                 <div class="font-bold text-2xl text-white">{{ total_quotations }}</div>
                 <div class="text-xl text-white">Quotations</div>
-                {% endif %}
             </div>
-    
-
         </div>
-
-        
-
     </div>
-
-</dv>
 </div>
 
 <div class="flex flex-row bg-white item-center justify-center gap-3 mx-auto p-5">
-
-<div class="p-6 mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-200 dark:border-gray-200">
-    <h3 class="m-2 p-2">Appointments</h3>
-    <div class="justify-center item-center p-2 ml-3">
-        <time id="today" class="text-gray-900 dark:text-gray-600">January 13th, 2022</time>
-    </div>
-    <ol class="mx-5 divide-y divider-gray-200 dark:divide-gray-700">
-        <li>
-            {% for scheduled_appoints in scheduled_appointments %}
-            <a href="{% url 'update_patient_request' scheduled_appoints.patient.id %}" class="items-center bg-blue-500 rounded-md block p-3 my-3 sm:flex hover:bg-blue-100 dark:hover:bg-blue-900">
-                <div class="text-gray-600 dark:text-white">
-                    <div class="flex flex-row justify-between gap-5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8  mx-2 h-20 w-20">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-                     
-                        <div class="text-base font-normal mx-3">
-                            <span class="font-bold text-gray-900 dark:text-white">{{scheduled_appoints.patient}}</span> Booked Appointment for 
-                            <span class="font-medium text-gray-900 dark:text-white"> {{ scheduled_appoints.service }}</span>
-                            <br />
-                            <hr class="my-2" />
-                            Doctor: <span class="font-medium text-gray-900 dark:text-white">{{ scheduled_appoints.dentist.user.username }}</span>
+    <div class="p-6 mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-200 dark:border-gray-200">
+        <h3 class="m-2 p-2">Scheduled Appointments</h3>
+        <div class="justify-center item-center p-2 ml-3">
+            <time id="today" class="text-gray-900 dark:text-gray-600">January 13th, 2022</time>
+        </div>
+        <ol class="mx-5 divide-y divider-gray-200 dark:divide-gray-700">
+            {% for appointment in scheduled_appointments %}
+            <li>
+                <a href="{% url 'update_patient_request' appointment.patient.id %}" class="items-center bg-blue-500 rounded-md block p-3 my-3 sm:flex hover:bg-blue-100 dark:hover:bg-blue-900">
+                    <div class="text-gray-600 dark:text-white">
+                        <div class="flex flex-row justify-between gap-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8 mx-2 h-20 w-20">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                            </svg>
+                            <div class="text-base font-normal mx-3">
+                                <span class="font-bold text-gray-900 dark:text-white">{{ appointment.patient }}</span> Booked Appointment for 
+                                <span class="font-medium text-gray-900 dark:text-white">{{ appointment.service }}</span>
+                                <br />
+                                <hr class="my-2" />
+                                Doctor: <span class="font-medium text-gray-900 dark:text-white">{{ appointment.dentist.user.username }}</span>
+                            </div>
+                        </div>
+                        <div class="text-sm font-normal mt-3 bg-slate-800 dark:bg-gray-700">
+                            <a href="{% url 'complete_appointment' appointment.id %}" class="text-blue-600 bg-slate-800 hover:underline dark:text-blue-500">
+                                <h1 class="m-4 p-4 font-bold text-white">Complete Appointment</h1>
+                            </a>
                         </div>
                     </div>
-                  
-        
-                    <div class="text-sm font-normal mt-3 bg-slate-800 dark:bg-gray-700">
-                        <a href="{% url 'complete_appointment' scheduled_appoints.patient.id %}" class="text-blue-600 bg-slate-800 hover:underline dark:text-blue-500">
-                        <form class="max-w-[16rem] mx-auto grid grid-cols-2 p-2 gap-4">
-                            <div>
-                                <label for="start-time" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start time:</label>
-                                <div class="relative">
-                                    <input 
-                                        type="time" 
-                                        id="start-time" 
-                                        class="bg-gray-50 border w-full leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-                                        min="09:00" 
-                                        max="18:00" 
-                                        value="{% if scheduled_appoints.date_time %}{{ scheduled_appoints.date_time|date:'H:i' }}{% else %}09:00{% endif %}" />
-                                </div>
-                                
-                            </div>
-                           
-                            <div>
-                                <label for="end-time" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End time:</label>
-                                <input 
-                                    type="time" 
-                                    id="end-time" 
-                                    class="bg-gray-50 border w-full leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-                                    min="09:00" 
-                                    max="18:00" 
-                                    value="{% if scheduled_appoints.date_time %}{{ scheduled_appoints.date_time|date:'H:i' }}{% else %}18:00{% endif %}" />
-                            </div>
-
-                           
-                        </form>
-                        <h1 class="m-4 p-4 font-bond text-white">Complete Appointment</h1>
-                        </a>
-                        {% endfor %}
-                    </div>
-            </a>
-        </li>
-        
-        {% comment %} <li>
-            <a href="#" class="items-center bg-blue-500 rounded-md block p-3 my-3 sm:flex hover:bg-blue-100 dark:hover:bg-blue-900">
-                <div class="text-gray-600 dark:text-white">
-                    <div class="flex flex-row justify-between gap-5">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8  mx-2 h-20 w-20">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-        
-                        <div class="text-base font-normal mx-3">
-                            <span class="font-bold text-gray-900 dark:text-white">Kangwa Mwamba </span> Booked Appointment for 
-                            <span class="font-medium text-gray-900 dark:text-white"> Braceses </span>
-                            <br />
-                            <hr class="my-2" />
-                            Doctor: <span class="font-medium text-gray-900 dark:text-white">Dr. Royd Kaoma</span>
-                        </div>
-                    </div>
-
-                    <div class="text-sm font-normal  mt-3">
-                        <form class="max-w-[16rem] mx-auto grid grid-cols-2 p-2 gap-4">
-                            <div>
-                                <label for="start-time" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start time:</label>
-                                <div class="relative">
-
-                                    <input type="time" id="start-time" class="bg-gray-50 border w-full leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" min="09:00" max="18:00" value="09:00" required />
-                                </div>
-                            </div>
-                            <div>
-                                <label for="end-time" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End time:</label>
-                                <input type="time" id="end-time" class="bg-gray-50 border w-full leading-none border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" min="09:00" max="18:00" value="10:00" required />
-                            </div>
-                        </form>
-                    </div>
-
-                    <span class="inline-flex items-center text-xs font-normal text-gray-500 dark:text-gray-400 mt-2">
-                        <svg class="w-2.5 h-2.5 mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 .5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19ZM8.374 17.4a7.6 7.6 0 0 1-5.9-7.4c0-.83.137-1.655.406-2.441l.239.019a3.887 3.887 0 0 1 2.082 2.5 4.1 4.1 0 0 0 2.441 2.8c1.148.522 1.389 2.007.732 4.522Zm3.6-8.829a.997.997 0 0 0-.027-.225 5.456 5.456 0 0 0-2.811-3.662c-.832-.527-1.347-.854-1.486-1.89a7.584 7.584 0 0 1 8.364 2.47c-1.387.208-2.14 2.237-2.14 3.307a1.187 1.187 0 0 1-1.9 0Zm1.626 8.053-.671-2.013a1.9 1.9 0 0 1 1.771-1.757l2.032.619a7.553 7.553 0 0 1-3.132 3.151Z" />
-                        </svg>
-                        From the web application
-                    </span>
-                </div>
-            </a>
-        </li> {% endcomment %}
-
-    </ol>
-</div>
-
-
-
-
-
-
-<div class="w-full max-w-md p-4 bg-white border border-gray-100 rounded-lg shadow sm:p-8 dark:bg-gray-200 dark:border-gray-200">
-    <div class="flex items-center justify-between mb-4">
-        <h3>Appointment Requests </h3>
-        <a href="{% url 'appointments' %}" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
-            View all
-        </a>
-   </div>
-   <div class="flow-root">
-        <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-            {% for pending_appointments in pending_appointments %}
-            <li class="py-3 sm:py-4 bg-blue-700 dark:hover-bg-blue-900 p-4 my-3 rounded-md">
-                <div class="flex items-center ">
-                    <div class="flex-shrink-0">
-                        <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-                    </div>
-                    
-                    <div class="flex-1 min-w-0 ms-4">
-                        <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                            {{ pending_appointments.patient }}
-                        </p>
-                        <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                            {{ pending_appointments.service }}
-                        </p>
-                    </div>
-                    <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <time class="mb-1 text-sm font-normal leading-none text-white">{{ pending_appointments.date_time|date:"F j, Y"}}</time>
-                    </div>
-                </div>
+                </a>
             </li>
+            {% empty %}
+            <li>No scheduled appointments.</li>
             {% endfor %}
-            
-            {% comment %} <li class="py-3 sm:py-4 bg-blue-700 dark:hover-bg-blue-900 p-4 my-3 rounded-md">
-                <div class="flex items-center ">
-                    <div class="flex-shrink-0">
-                        <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80" alt="">
-                    </div>
-                    
-                    <div class="flex-1 min-w-0 ms-4">
-                        <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                            George Lungu
-                        </p>
-                        <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                            email@windster.com
-                        </p>
-                    </div>
-                    <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <time class="mb-1 text-sm font-normal leading-none text-white">April 2024</time>
-                    </div>
-                </div>
-            </li>
+        </ol>
+    </div>
 
-            <li class="py-3 sm:py-4 bg-blue-700 dark:hover-bg-blue-900 p-4 my-3 rounded-md">
-                <div class="flex items-center ">
-                    <div class="flex-shrink-0">
-                        <img class="w-8 h-8 rounded-full"  src="https://images.unsplash.com/photo-1519345182560-3f2917c472ef?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80" alt="">
+    <div class="w-full max-w-md p-4 bg-white border border-gray-100 rounded-lg shadow sm:p-8 dark:bg-gray-200 dark:border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <h3>Pending Appointments</h3>
+            <a href="{% url 'appointments' %}" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
+                View all
+            </a>
+        </div>
+        <div class="flow-root">
+            <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for appointment in pending_appointments %}
+                <li class="py-3 sm:py-4 bg-blue-700 dark:hover-bg-blue-900 p-4 my-3 rounded-md">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
+                        </div>
+                        <div class="flex-1 min-w-0 ms-4">
+                            <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
+                                {{ appointment.patient }}
+                            </p>
+                            <p class="text-sm text-gray-500 truncate dark:text-gray-400">
+                                {{ appointment.service }}
+                            </p>
+                        </div>
+                        <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                            <time class="mb-1 text-sm font-normal leading-none text-white">{{ appointment.date_time|date:"F j, Y" }}</time>
+                        </div>
                     </div>
-                    
-                    <div class="flex-1 min-w-0 ms-4">
-                        <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                            John Mwale
-                        </p>
-                        <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                            email@windster.com
-                        </p>
-                    </div>
-                    <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <time class="mb-1 text-sm font-normal leading-none text-white">December 2024</time>
-                    </div>
-                </div>
-            </li>
-
-             <li class="py-3 sm:py-4 bg-blue-700 hover-bg-blue-400 p-4 my-3 rounded-md">
-                <div class="flex items-center ">
-                    <div class="flex-shrink-0">
-                        <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=8&w=1024&h=1024&q=80" alt="">
-                    </div>
-                    
-                    <div class="flex-1 min-w-0 ms-4">
-                        <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                            Whitney Francis
-                        </p>
-                        <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                            email@windster.com
-                        </p>
-                    </div>
-                    <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <time class="mb-1 text-sm font-normal leading-none text-white">Feburay 2022</time>
-                    </div>
-                </div>
-            </li>
-
-             <li class="py-3 sm:py-4 bg-blue-700 dark:hover-bg-blue-900 p-4 my-3 rounded-md">
-                <div class="flex items-center ">
-                    <div class="flex-shrink-0">
-                        <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-                    </div>
-                    
-                    <div class="flex-1 min-w-0 ms-4">
-                        <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                            Neil Sims
-                        </p>
-                        <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                            email@windster.com
-                        </p>
-                    </div>
-                    <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                        <time class="mb-1 text-sm font-normal leading-none text-white">March 2022</time>
-                    </div>
-                </div>
-            </li> {% endcomment %}
-
-        </ul>
-   </div>
-</div>
+                </li>
+                {% empty %}
+                <li>No pending appointments.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 
 <div class="mx-4 p-6">
     <div>
         <canvas id="myChart"></canvas>
     </div>
-      
-</div>
-
 </div>
 
 <script>
-    //Getting the time and date for the appointments
+    // Getting the time and date for the appointments
     const now = new Date();
     const today = document.getElementById('today');
-
     today.innerHTML = `<h3>Today ${now.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -353,32 +172,25 @@
         day: 'numeric'
     })}</h3>`;
 
-
-
-
+    // Chart.js initialization
     const ctx = document.getElementById('myChart');
-
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-      datasets: [{
-        label: '# of Votes',
-        data: [12, 19, 3, 5, 2, 3],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            datasets: [{
+                label: '# of Votes', 
+                data: [12, 19, 3, 5, 2, 3],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
         }
-      }
-    }
-  });
+    });
 </script>
-
-
-
-
 {% endblock %}

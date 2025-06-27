@@ -32,6 +32,7 @@ from django.db import transaction, IntegrityError
 from django.contrib.auth.decorators import login_required, user_passes_test
 from payments.models import Invoice, Payment, InvoiceService, Quotation, QuotationService
 from payments.forms import InvoiceForm, PaymentForm
+from branches.models import Branch 
 
 
 
@@ -42,13 +43,13 @@ def app_login(request):
 def is_admin(user):
     return user.user_type == 1
 
+# Admin Dashboard with Branches
 @login_required
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     users = CustomUser.objects.all()
-    return render(request, 'admin_dashboard.html', {'users': users})
-
-
+    branches = Branch.objects.all()  # Fetch all branches
+    return render(request, 'admin_dashboard.html', {'users': users, 'branches': branches})
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
@@ -87,17 +88,24 @@ def create_admin(request):
         form = CustomUserCreationForm()
     return render(request, 'create_admin.html', {'form': form})
 
+
+# Create a new user with branch assignment
+@login_required
+@user_passes_test(is_admin)
 def create_user(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}!')
-            return redirect('login')  # Redirect to the login page or another URL
+            user = form.save(commit=False)
+            user.branch = form.cleaned_data.get('branch')  # Assign branch from form
+            user.save()
+            messages.success(request, f'Account created for {user.username}!')
+            return redirect('admin_dashboard')
     else:
         form = CustomUserCreationForm()
-    return render(request, 'create_user.html', {'form': form})
+    branches = Branch.objects.all()  # Pass branches to the form
+    return render(request, 'create_user.html', {'form': form, 'branches': branches})
+
 
 
 def login_user(request):
@@ -138,32 +146,90 @@ def logout_view(request):
     return redirect('login')
 
 
+# Dentists Page with Branch Filter
+@login_required
 def DentistsPage(request):
-    dentists = Dentist.objects.all()
-    return render(request, 'dentists.html', {'dentists': dentists})
+    dentists = Dentist.objects.select_related('user__branch').all()  # Include branch in query
+    branches = Branch.objects.all()
+    return render(request, 'dentists.html', {'dentists': dentists, 'branches': branches})
 
 @login_required
 def Dashboard(request):
     logined_user = request.user.username
+
+    # Total appointments
     total_appointments = Appointment.objects.all().count()
-    total_patients = Patient.objects.all().count()
+
+    # Total patients (using corrected query)
+    total_patients = Patient.objects.count()  # Or use a valid field like role='patient' if applicable
+
+    # Scheduled appointments
     scheduled_appointments = Appointment.objects.filter(status='Scheduled')
+
+    # Pending appointments
     pending_appointments = Appointment.objects.filter(status='Pending')
+
+    # Completed appointments
     completed_appointments = Appointment.objects.filter(status='Completed')
+
+    # Cancelled appointments
     cancelled_appointments = Appointment.objects.filter(status='Cancelled')
+
+    # Total quotations
     total_quotations = Quotation.objects.all().count()
-    return render(request, 'dashboard.html', {'scheduled_appointments': scheduled_appointments, 'pending_appointments': pending_appointments, 'completed_appointments': completed_appointments, 'cancelled_appointments': cancelled_appointments, 'logined_user': logined_user, 'total_appointments': total_appointments, 'total_patients': total_patients, 'total_appointments': total_appointments
-                                              , 'total_quotations': total_quotations})
-    
+
+    return render(
+        request,
+        'dashboard.html',
+        {
+            'scheduled_appointments': scheduled_appointments,
+            'pending_appointments': pending_appointments,
+            'completed_appointments': completed_appointments,
+            'cancelled_appointments': cancelled_appointments,
+            'logined_user': logined_user,
+            'total_appointments': total_appointments,
+            'total_patients': total_patients,
+            'total_quotations': total_quotations,
+        }
+    )
+
+
+# Patients Page with Branch Filter
 @login_required
 def PatientsPage(request):
-    patients = Patient.objects.filter(is_patient=True).order_by('-id')
-    return render(request, 'patients.html', {'patients': patients})
+    # Get the logged-in user and their branch (if any)
+    user_branch = getattr(request.user, 'branch', None)
 
+    # Fetch all branches for filtering (only for admin users)
+    branches = Branch.objects.all() if request.user.user_type == 1 else None
+
+    # Admin-specific branch filtering
+    selected_branch_id = request.GET.get('branch') if request.user.user_type == 1 else None
+
+    # Filter data based on the user's branch
+    if user_branch and request.user.user_type != 1:  # Non-admin users see only their branch's data
+        patients = Patient.objects.filter(branch=user_branch, is_patient=True).order_by('-id')
+    else:
+        # Admin users see data for all branches or the selected branch
+        patients = Patient.objects.filter(is_patient=True).order_by('-id')
+
+        if selected_branch_id:
+            try:
+                selected_branch = Branch.objects.get(id=selected_branch_id)
+                patients = Patient.objects.filter(branch=selected_branch, is_patient=True).order_by('-id')
+            except Branch.DoesNotExist:
+                messages.warning(request, "Invalid branch selected. Showing all data.")
+
+    return render(request, 'patients.html', {
+        'patients': patients,
+        'branches': branches,
+        'selected_branch_id': selected_branch_id,
+    })
+
+# Create Patient with Branch Assignment
 @login_required
 def CreatePatient(request):
     if request.method == 'POST':
-        # Retrieve form data
         first_name = request.POST.get('first-name', '').strip()
         last_name = request.POST.get('last-name', '').strip()
         date_of_birth = request.POST.get('dob', '').strip()
@@ -173,14 +239,12 @@ def CreatePatient(request):
         email = request.POST.get('email', '').strip()
         address = request.POST.get('address', '').strip()
         medical_history = request.POST.get('medical_history', '').strip()
-
-        # Validate required fields
+        branch_id = request.POST.get('branch')  # Get branch ID from form
         if not all([first_name, last_name, date_of_birth, gender, nrc, phone]):
             messages.error(request, 'All required fields must be filled.')
             return render(request, 'create_patient.html')
-
-        # Create the patient
         try:
+            branch = Branch.objects.get(id=branch_id) if branch_id else None  # Fetch branch
             Patient.objects.create(
                 first_name=first_name,
                 last_name=last_name,
@@ -191,58 +255,106 @@ def CreatePatient(request):
                 email=email,
                 address=address,
                 medical_history=medical_history,
-                is_patient=True
+                is_patient=True,
+                branch=branch  # Assign branch to patient
             )
             messages.success(request, 'Patient created successfully!')
-            return redirect('patients')  # Redirect to the patients list page
+            return redirect('patients')
         except Exception as e:
             messages.error(request, f'An error occurred: {str(e)}')
             return render(request, 'create_patient.html')
+    branches = Branch.objects.all()  # Pass branches to the form
+    return render(request, 'create_patient.html', {'branches': branches})
 
-    # Render the form for GET requests
-    return render(request, 'create_patient.html')
-
-
-
+@login_required
 def AppointmentsPage(request):
-    # Retrieve pending appointments
-    pending_appointments = Appointment.objects.filter(status='Pending')
-    scheduled_appointments = Appointment.objects.filter(status='Scheduled')
-    completed_appointments = Appointment.objects.filter(status='Completed')
-    
-    # Retrieve dentists with user_type=3
-    dentists = Dentist.objects.filter(user__user_type=3)
-    
-    # Retrieve services with valid name and price
-    services = Service.objects.filter(name__isnull=False, price__isnull=False)
+    # Debugging logs (optional - remove in production)
+    print("DEBUG: request.user.branch =", request.user.branch)
+    print("DEBUG: request.user.branch_id =", request.user.branch_id)
 
-    # Pass all data to the template
-    return render(
-        request,
-        'appointments.html',
-        {
-             'pending_appointments': pending_appointments,
-            'completed_appointments': completed_appointments,   # Retrieve completed appointments
-            'scheduled_appointments': scheduled_appointments,  # Retrieve scheduled appointments
-            'dentists': dentists,
-            'services': services,
-        }
-    )
+    # Always get branch instance from branch_id to avoid string issues
+    branch_id = getattr(request.user, 'branch_id', None)
+    user_branch = None
+    if branch_id:
+        try:
+            user_branch = Branch.objects.get(id=branch_id)
+        except Branch.DoesNotExist:
+            messages.warning(request, "Your assigned branch does not exist.")
 
+    # Warn dentist/staff users without a valid branch
+    if request.user.user_type in [2, 3] and not user_branch:
+        messages.warning(request, "Your account is not assigned to a branch. Please contact the administrator.")
+
+    # Admin users can see all branches for filtering
+    branches = Branch.objects.all() if request.user.user_type == 1 else None
+
+    # Filter dentists by user's branch only if user_branch is valid
+    if user_branch:
+        dentists = Dentist.objects.filter(user__branch=user_branch)
+    else:
+        dentists = Dentist.objects.all()
+
+    selected_branch_id = request.GET.get('branch') if request.user.user_type == 1 else None
+
+    # Filter appointments according to user type and branch
+    if user_branch and request.user.user_type != 1:
+        pending_appointments = Appointment.objects.filter(patient__branch=user_branch, status='Pending')
+        scheduled_appointments = Appointment.objects.filter(patient__branch=user_branch, status='Scheduled')
+        completed_appointments = Appointment.objects.filter(patient__branch=user_branch, status='Completed')
+    else:
+        pending_appointments = Appointment.objects.filter(status='Pending')
+        scheduled_appointments = Appointment.objects.filter(status='Scheduled')
+        completed_appointments = Appointment.objects.filter(status='Completed')
+
+        # If admin filtered by a selected branch
+        if selected_branch_id:
+            try:
+                selected_branch = Branch.objects.get(id=selected_branch_id)
+                pending_appointments = pending_appointments.filter(patient__branch=selected_branch)
+                scheduled_appointments = scheduled_appointments.filter(patient__branch=selected_branch)
+                completed_appointments = completed_appointments.filter(patient__branch=selected_branch)
+            except Branch.DoesNotExist:
+                messages.warning(request, "Invalid branch selected. Showing all data.")
+
+    return render(request, 'appointments.html', {
+        'pending_appointments': pending_appointments,
+        'scheduled_appointments': scheduled_appointments,
+        'completed_appointments': completed_appointments,
+        'branches': branches,
+        'selected_branch_id': selected_branch_id,
+        'dentists': dentists,
+    })
 
 def index(request):
-    # Retrieve only services with valid name and price
-    services = Service.objects.filter(name__isnull=False, price__isnull=False)
-    
-    # Debugging: Print raw SQL query and retrieved services
-    print("[DEBUG] Raw Query:", services.query)
-    print("[DEBUG] Retrieved Services:", [(s.id, s.name, s.price) for s in services])
+    try:
+        # Retrieve all branches
+        branches = Branch.objects.all()
+        
+        # Retrieve services with valid name and price
+        services = Service.objects.filter(name__isnull=False, price__isnull=False)
+        
+        # Debugging: Log retrieved data
+        print("[DEBUG] Retrieved Branches:", [(b.id, b.name) for b in branches])
+        print("[DEBUG] Retrieved Services:", [(s.id, s.name, s.price) for s in services])
 
-    if not services.exists():
-        print("[WARNING] No services found in the database.")
-        messages.warning(request, "No services available. Please contact the administrator.")
+        # Warn if no branches or services are available
+        if not branches.exists():
+            messages.warning(request, "No branches available. Please contact the administrator.")
+        if not services.exists():
+            messages.warning(request, "No services available. Please contact the administrator.")
 
-    return render(request, 'index.html', {'services': services})
+    except Exception as e:
+        # Catch unexpected errors and log them
+        print(f"[ERROR] An error occurred while fetching branches or services: {str(e)}")
+        messages.error(request, "An error occurred while loading the page. Please try again later.")
+        branches = []
+        services = []
+
+    # Pass data to the template
+    return render(request, 'index.html', {
+        'branches': branches,
+        'services': services,
+    })
 
 
 @csrf_exempt
@@ -254,36 +366,39 @@ def clear_appointment_created_flag(request):
 
 
 
-@csrf_protect
+
 def create_appointment(request):
     if request.method == 'POST':
         try:
+            # Retrieve form data
             full_name = request.POST.get('full_name')
             email = request.POST.get('email')
             phone = request.POST.get('phone')
             appoint_date = request.POST.get('appoint_date')
             appoint_time = request.POST.get('appoint_time')
             service_id = request.POST.get('service')
+            branch_id = request.POST.get('branch')  # Get the selected branch
             notes = request.POST.get('notes')
 
-            # Handle cases where full_name does not contain a space
-            if ' ' in full_name:
-                first_name, last_name = full_name.rsplit(' ', 1)
-            else:
+            # Validate full name
+            if ' ' not in full_name:
                 messages.error(request, "Full name must include both first and last names.")
                 return redirect('index')
 
-            # Check if the service exists
+            first_name, last_name = full_name.rsplit(' ', 1)
+
+            # Validate service selection
             try:
                 service = Service.objects.get(id=service_id)
-            except ObjectDoesNotExist:
+            except Service.DoesNotExist:
                 messages.error(request, "Invalid service selected.")
                 return redirect('index')
 
-            # Ensure a dentist is available
-            dentist = Dentist.objects.first()
-            if not dentist:
-                messages.error(request, "No dentists available to assign appointments.")
+            # Validate branch selection
+            try:
+                branch = Branch.objects.get(id=branch_id)
+            except Branch.DoesNotExist:
+                messages.error(request, "Invalid branch selected.")
                 return redirect('index')
 
             # Parse and validate date and time
@@ -300,31 +415,33 @@ def create_appointment(request):
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
-                defaults={'phone': phone}
+                defaults={'phone': phone, 'branch': branch}
             )
 
             # Create the appointment
             appointment = Appointment.objects.create(
                 patient=patient,
-                dentist=dentist,
                 date_time=aware_date_time,
                 service=service,
                 notes=notes
             )
 
-            # Notify via Channels
+            # Notify via Channels (if applicable)
             channel_layer = get_channel_layer()
             if channel_layer:
                 async_to_sync(channel_layer.group_send)(
                     "appointment_notifications",
                     {
                         "type": "send_notification",
-                        "message": f"New appointment: {appointment.patient.first_name} {appointment.patient.last_name}, Service: {appointment.service.name}, Date: {appointment.date_time.strftime('%Y-%m-%d %H:%M')}"
+                        "message": (
+                            f"New appointment: {appointment.patient.first_name} {appointment.patient.last_name}, "
+                            f"Service: {appointment.service.name}, "
+                            f"Date: {appointment.date_time.strftime('%Y-%m-%d %H:%M')}"
+                        )
                     }
                 )
 
-            # Set session flag and redirect
-            request.session['appointment_created'] = True
+            # Set success message and redirect
             messages.success(request, "Appointment created successfully!")
             return redirect('index')
 
@@ -338,7 +455,6 @@ def create_appointment(request):
 
 
 @csrf_protect
-
 def walk_in_appointment(request):
     if request.method == 'POST':
         try:
@@ -627,37 +743,25 @@ def update_patient(request):
         messages.error(request, 'Failed to update the patient. Make sure all required fields are filled.')
         return redirect('patients')
 
-# Search for patient
-
-
+# Search Patient with Branch Filter
+@login_required
 def search_patient(request):
     if request.method == 'POST':
-        # Retrieve the search input
-        search_services = request.POST.get('search_services', '').strip()
-
-        # Build a dynamic query
+        search_query = request.POST.get('search_services', '').strip()
+        branch_id = request.POST.get('branch')  # Get branch ID from form
         query = Q()
-        if search_services:
-            query |= Q(first_name__icontains=search_services)
-            query |= Q(last_name__icontains=search_services)
-            query |= Q(email__icontains=search_services)
-            query |= Q(nrc__icontains=search_services)
-
-        # Filter patients based on the query
-        if query:
-            patients = Patient.objects.filter(query)
-        else:
-            patients = Patient.objects.none()  # Return no results if search_services is empty
-
-        # Render the results
-        return render(request, 'search_patient.html', {'patients': patients})
-
-    else:
-        # No records found
-        messages.error(request, 'No records found.')
-        # Render the search form again
-        return render(request,'search_patient.html', {'messages': messages})
-
+        if search_query:
+            query |= Q(first_name__icontains=search_query)
+            query |= Q(last_name__icontains=search_query)
+            query |= Q(email__icontains=search_query)
+            query |= Q(nrc__icontains=search_query)
+        patients = Patient.objects.filter(query)
+        if branch_id:
+            patients = patients.filter(branch_id=branch_id)  # Filter by branch
+        branches = Branch.objects.all()
+        return render(request, 'search_patient.html', {'patients': patients, 'branches': branches})
+    branches = Branch.objects.all()
+    return render(request, 'search_patient.html', {'branches': branches})
 
 def complete_appointment(request, appointment_id):
     try:
@@ -873,24 +977,39 @@ def create_quotation_list(request):
 
 
 
+
 def create_quotation(request):
     if request.method == 'POST':
+        # Retrieve form data
         patient_id = request.POST.get('patient_id')
         selected_service_ids = request.POST.getlist('services')
         quantities = request.POST.getlist('quantities')
 
-        # Ensure quantities list is valid
+        # Validate inputs
         if not selected_service_ids:
             return JsonResponse({'error': 'No services selected'}, status=400)
 
         if len(quantities) < len(selected_service_ids):
             return JsonResponse({'error': 'Missing quantities for some services'}, status=400)
 
+        # Fetch the patient object
         patient = get_object_or_404(Patient, id=patient_id)
+
+        # Branch logic: Ensure the patient has a branch assigned
+        if not patient.branch:
+            return JsonResponse({'error': 'The selected patient does not belong to any branch.'}, status=400)
+
+        # Optional: Restrict to the logged-in user's branch (if applicable)
+        if hasattr(request.user, 'branch') and request.user.branch != patient.branch:
+            return JsonResponse({'error': 'You can only create quotations for patients in your branch.'}, status=403)
 
         with transaction.atomic():
             # Create the quotation
-            quotation = Quotation.objects.create(patient=patient, status='draft')
+            quotation = Quotation.objects.create(
+                patient=patient,
+                status='draft',
+                branch=patient.branch  # Assign the patient's branch to the quotation
+            )
 
             # Add selected services to the quotation
             total_amount = Decimal('0.00')
@@ -924,29 +1043,51 @@ def create_quotation(request):
     patients = Patient.objects.all()
     services = Service.objects.all()
 
+    # Pass branch information for filtering (optional)
+    branches = set(Patient.objects.values_list('branch__id', 'branch__name').distinct())
+
     return render(request, 'create_quotation.html', {
         'patients': patients,
         'services': services,
+        'branches': branches  # Pass branches to the template for filtering
     })
 
+
 def quotation_detail(request, pk):
+    # Fetch the quotation object
     quotation = get_object_or_404(Quotation, pk=pk)
-    return render(request, 'quotation_detail.html', {'quotation': quotation})
+
+    # Include branch information in the context
+    branch_name = quotation.branch.name if quotation.branch else "No Branch Assigned"
+    branch_address = quotation.branch.address if quotation.branch else "N/A"
+
+    return render(request, 'quotation_detail.html', {
+        'quotation': quotation,
+        'branch_name': branch_name,
+        'branch_address': branch_address
+    })
 
 
 def download_quotation_pdf(request, quotation_id):
     """
     Generate and download a quotation PDF that matches the provided image design.
+    Includes branch information for the patient.
     """
+    # Fetch the quotation object
     quotation = get_object_or_404(Quotation, id=quotation_id)
 
+    # Get the patient's branch information
+    patient_branch_name = quotation.patient.branch.name if quotation.patient.branch else "No Branch Assigned"
+    patient_branch_address = quotation.patient.branch.address if quotation.patient.branch else "N/A"
+
+    # Build the HTML content for the PDF
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <style>
             body {{ font-family: Arial, sans-serif; padding: 40px; }}
-            .header {{ display: flex; justify-content: space-between; align-servicess: center; }}
+            .header {{ display: flex; justify-content: space-between; align-items: center; }}
             .header img {{ width: 100px; }}
             .quotation-title {{ background-color: #00A9CE; color: white; font-size: 24px; padding: 10px; text-align: center; font-weight: bold; }}
             .details {{ display: flex; justify-content: space-between; margin-top: 20px; }}
@@ -963,12 +1104,13 @@ def download_quotation_pdf(request, quotation_id):
         <div class="header">
             <div>
                 <h2> Superior Dental Solutions Limited</h2>
+                <p><strong>Branch:</strong> {escape(patient_branch_name)}</p>
+                <p><strong>Address:</strong> {escape(patient_branch_address)}</p>
             </div>
             <div>
                 <div>
-                <p>Valid till: {quotation.valid_until.strftime('%Y-%m-%d') if quotation.valid_until else 'Not specified'}</p>
-                <p>Total: K{quotation.total_amount:.2f}</p>
-
+                    <p>Valid till: {quotation.valid_until.strftime('%Y-%m-%d') if quotation.valid_until else 'Not specified'}</p>
+                    <p>Total: K{quotation.total_amount:.2f}</p>
                 </div>
             </div>
         </div>
@@ -977,12 +1119,12 @@ def download_quotation_pdf(request, quotation_id):
             <div>
                 <strong>Quote from:</strong>
                 <p>Superior Dental Solution Limited </p>
-                <p>Street Address, Zip Code</p>
+                <p>{escape(patient_branch_address)}</p>
                 <p>Phone Number</p>
             </div>
             <div>
                 <strong>Quote to:</strong>
-                <p>{escape(quotation.patient.first_name)}</p>
+                <p>{escape(quotation.patient.first_name)} {escape(quotation.patient.last_name)}</p>
                 <p>{escape(quotation.patient.address)}</p>
                 <p>{escape(quotation.patient.phone)}</p>
             </div>
@@ -990,7 +1132,7 @@ def download_quotation_pdf(request, quotation_id):
         <table>
             <thead>
                 <tr>
-                    <th>services</th>
+                    <th>Service</th>
                     <th>Rate</th>
                     <th>Quantity</th>
                     <th>Total</th>
@@ -998,15 +1140,25 @@ def download_quotation_pdf(request, quotation_id):
             </thead>
             <tbody>
     """
-    
-  
+
+    # Add services to the table
+    for service in quotation.services.all():
+        html_content += f"""
+                <tr>
+                    <td>{escape(service.name)}</td>
+                    <td>K{service.price:.2f}</td>
+                    <td>{service.quantity}</td>
+                    <td>K{service.price * service.quantity:.2f}</td>
+                </tr>
+        """
+
     html_content += f"""
             </tbody>
         </table>
         <div class="total-section">
             <p>Subtotal: K{quotation.total_amount:.2f}</p>
-            <p>Discount: K </p>
-            <p>Tax: K 0.00</p>
+            <p>Discount: K0.00</p>
+            <p>Tax: K0.00</p>
         </div>
         <div class="grand-total">
             Total: K{quotation.total_amount:.2f}
@@ -1015,6 +1167,7 @@ def download_quotation_pdf(request, quotation_id):
     </html>
     """
 
+    # Generate the PDF response
     pdf_response = HttpResponse(content_type='application/pdf')
     pdf_response['Content-Disposition'] = f'attachment; filename="Quotation_{quotation.id}.pdf"'
     HTML(string=html_content).write_pdf(pdf_response)
@@ -1022,14 +1175,101 @@ def download_quotation_pdf(request, quotation_id):
 
 
 
-    return response
+@login_required
 def quotation_list(request):
+    # Default queryset: All quotations
     quotations = Quotation.objects.all()
-    return render(request, 'quotation_list.html', {'quotations': quotations})
+
+    # Fetch all branches for filtering (only for admin users)
+    branches = Branch.objects.all() if request.user.user_type == 1 else None
+
+    # Admin-specific branch filtering
+    if request.user.user_type == 1:
+        selected_branch_id = request.GET.get('branch')
+        if selected_branch_id:
+            try:
+                selected_branch = Branch.objects.get(id=selected_branch_id)
+                quotations = quotations.filter(patient__branch=selected_branch)
+            except Branch.DoesNotExist:
+                messages.warning(request, "Invalid branch selected. Showing all quotations.")
+    else:
+        selected_branch_id = None
+
+    return render(request, 'quotation_list.html', {
+        'quotations': quotations,
+        'branches': branches,
+        'selected_branch_id': selected_branch_id
+    })
 
 
-
+# Existing Patient Appointment with Branch Assignment
+@login_required
 def exist_patient_appointment(request, patient_id):
-    patient = Patient.objects.get(id=patient_id)
+    patient = get_object_or_404(Patient, id=patient_id)
     services = Service.objects.filter(name__isnull=False, price__isnull=False)
-    return render(request, 'existing_patient_appointment.html', {'patient': patient, 'services': services})
+    branches = Branch.objects.all()
+    if request.method == 'POST':
+        appoint_date = request.POST.get('appoint_date')
+        appoint_time = request.POST.get('appoint_time')
+        service_id = request.POST.get('service')
+        notes = request.POST.get('notes')
+        branch_id = request.POST.get('branch')  # Get branch ID from form
+        try:
+            service = Service.objects.get(id=service_id)
+            branch = Branch.objects.get(id=branch_id) if branch_id else None  # Fetch branch
+            dentist = Dentist.objects.filter(user__branch=branch).first()  # Find dentist in the same branch
+            if not dentist:
+                messages.error(request, "No dentists available in the selected branch.")
+                return redirect('exist_patient_appointment', patient_id=patient_id)
+            date_time_str = f"{appoint_date} {appoint_time}"
+            naive_date_time = timezone.datetime.strptime(date_time_str, "%Y-%m-%d %H:%M")
+            aware_date_time = timezone.make_aware(naive_date_time, timezone.get_default_timezone())
+            Appointment.objects.create(
+                patient=patient,
+                dentist=dentist,
+                date_time=aware_date_time,
+                service=service,
+                notes=notes
+            )
+            messages.success(request, "Appointment created successfully!")
+            return redirect('patients')
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('exist_patient_appointment', patient_id=patient_id)
+    return render(request, 'existing_patient_appointment.html', {'patient': patient, 'services': services, 'branches': branches})
+
+# Existing Patient Appointment with Branch Assignment
+@login_required
+def exist_patient_appointment(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+    services = Service.objects.filter(name__isnull=False, price__isnull=False)
+    branches = Branch.objects.all()
+    if request.method == 'POST':
+        appoint_date = request.POST.get('appoint_date')
+        appoint_time = request.POST.get('appoint_time')
+        service_id = request.POST.get('service')
+        notes = request.POST.get('notes')
+        branch_id = request.POST.get('branch')  # Get branch ID from form
+        try:
+            service = Service.objects.get(id=service_id)
+            branch = Branch.objects.get(id=branch_id) if branch_id else None  # Fetch branch
+            dentist = Dentist.objects.filter(user__branch=branch).first()  # Find dentist in the same branch
+            if not dentist:
+                messages.error(request, "No dentists available in the selected branch.")
+                return redirect('exist_patient_appointment', patient_id=patient_id)
+            date_time_str = f"{appoint_date} {appoint_time}"
+            naive_date_time = timezone.datetime.strptime(date_time_str, "%Y-%m-%d %H:%M")
+            aware_date_time = timezone.make_aware(naive_date_time, timezone.get_default_timezone())
+            Appointment.objects.create(
+                patient=patient,
+                dentist=dentist,
+                date_time=aware_date_time,
+                service=service,
+                notes=notes
+            )
+            messages.success(request, "Appointment created successfully!")
+            return redirect('patients')
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('exist_patient_appointment', patient_id=patient_id)
+    return render(request, 'existing_patient_appointment.html', {'patient': patient, 'services': services, 'branches': branches})

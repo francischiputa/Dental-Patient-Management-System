@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 {% block title %} Appointments {% endblock %}
 {% block content %}
+<!-- Success Message -->
 {% if request.session.appointment_created %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         Swal.fire({
             title: 'Success!',
             text: 'Appointment has been created successfully!',
@@ -13,254 +14,77 @@
             // Clear the session variable after displaying the message
             fetch("{% url 'clear_appointment_created_flag' %}", {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            });
-        });
-    });
-</script>
-{% endif %}
-{% if request.session.dentist_assigned %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            title: 'Success!',
-            text: 'Dentist has been assigned and notification sent!',
-            icon: 'success',
-            confirmButtonText: 'OK'
-        }).then((result) => {
-            // Clear the session variable after displaying the message
-            fetch("{% url 'clear_dentist_assigned_flag' %}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
             });
         });
     });
 </script>
 {% endif %}
 
-<!-- Tabs -->
-<div class="flex space-x-4 mb-6">
-  <button id="tab-pending" class="tab-button active bg-blue-500 text-white px-4 py-2 rounded-md" onclick="switchTab('pending')">Pending</button>
-  <button id="tab-scheduled" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('scheduled')">Scheduled</button>
-  <button id="tab-completed" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('completed')">Completed</button>
+<!-- Branch Filter Dropdown (Visible Only to Admins) -->
+<div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">Appointments</h1>
+    {% if user.user_type == 1 %}
+    <form method="get" class="mb-3">
+        <label for="branch" class="mr-2 text-gray-700">Filter by Branch:</label>
+        <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+            <option value="">All Branches</option>
+            {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
+                    {{ branch.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Display User's Branch (Non-Admin Users) -->
+{% if user.branch and user.user_type != 1 %}
+<div class="mb-4 text-gray-700">
+    <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+</div>
+{% endif %}
+
+<!-- Tab Buttons -->
+<div class="flex gap-4 mb-4">
+    <button id="tab-pending" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('pending')">Pending</button>
+    <button id="tab-scheduled" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('scheduled')">Scheduled</button>
+    <button id="tab-completed" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('completed')">Completed</button>
 </div>
 
 <!-- Pending Appointments Table -->
 <div id="table-pending" class="tab-content">
-  {% include 'appointment_table.html' with appointments=pending_appointments table_type='pending' %}
+    {% include 'appointment_table.html' with appointments=pending_appointments table_type='pending' %}
 </div>
 
 <!-- Scheduled Appointments Table -->
 <div id="table-scheduled" class="tab-content hidden">
-  {% include 'appointment_table.html' with appointments=scheduled_appointments table_type='scheduled' %}
+    {% include 'appointment_table.html' with appointments=scheduled_appointments table_type='scheduled' %}
 </div>
 
 <!-- Completed Appointments Table -->
 <div id="table-completed" class="tab-content hidden">
-  {% include 'appointment_table.html' with appointments=completed_appointments table_type='completed' %}
+    {% include 'appointment_table.html' with appointments=completed_appointments table_type='completed' %}
 </div>
-
-<!-- Add appointment Modal -->
-<dialog data-modal>
-  <div id="crud-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto flex overflow-x-hidden inset-0 fixed z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-    <div class="relative p-4 w-full max-w-md max-h-full">
-      <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-gray-300">
-        <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-black">
-            Create an Appointment
-          </h3>
-          <button data-close-modal type="button" class="text-gray-400 bg-transparent hover:bg-red-200 hover:text-red-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0 0l6 6M7 7l6-6M7 7l-6 6" />
-            </svg>
-          </button>
-        </div>
-        <!-- Modal body -->
-        <form class="p-4 md:p-5" method='POST' action="{% url 'walkin_appointment' %}">
-          {% csrf_token %}
-          <div class="mb-4">
-            <label class="block text-gray-700">Full Name</label>
-            <input type="text" name="full_name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="Your Name" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700">Email</label>
-            <input type="email" name="email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="Your Email" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700">Phone</label>
-            <input type="tel" name="phone" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="Your Phone Number" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700">Appointment Date</label>
-            <input type="date" name="appoint_date" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700">Appointment Time</label>
-            <input type="time" name="appoint_time" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-gray-700">Service</label>
-            <select name="service" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-                {% for service in services %}
-                    <option value="{{ service.id }}">
-                        {{ service.name|default:"Unnamed Service" }}
-                    </option>
-                {% empty %}
-                    <option value="">No services available</option>
-                {% endfor %}
-            </select>
-        </div>
-          <div class="mb-4">
-            <label class="block text-gray-700">Notes</label>
-            <textarea name="notes" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm" placeholder="Your Notes"></textarea>
-          </div>
-          <div class="flex items-center justify-end">
-            <button type="button" class="bg-red-800 text-white py-2 px-4 rounded-md mr-2" id="cancel-button">Cancel</button>
-            <button type="submit" class="bg-sky-800 text-white py-2 px-4 rounded-md">Submit</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</dialog>
-
-<!-- Assign Dentist Modal -->
-<dialog id="assignDentistModal" class="modal">
-  <div id="crud-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto flex overflow-x-hidden inset-0 fixed z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-    <div class="relative p-4 w-full max-w-md max-h-full">
-      <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow dark:bg-gray-300">
-        <!-- Modal header -->
-        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-black">
-            Assign Dentist
-          </h3>
-          <button id="closeAssignDentistModal" type="button" class="text-gray-400 bg-transparent hover:bg-red-200 hover:text-red-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0 0l6 6M7 7l6-6M7 7l-6 6" />
-            </svg>
-          </button>
-        </div>
-        <!-- Modal body -->
-        <form action="{% url 'assign_dentist'%}" id="assignDentistForm" class="p-4 md:p-5" method="POST">
-          {% csrf_token %}
-          <div class="grid gap-4 mb-4 grid-cols-2">
-            <div class="col-span-2">
-              <label class="block text-gray-700">Select Dentist:</label>
-              <select id="dentist" name="dentist" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
-                {% for dentist in dentists %}
-                  <option value="{{ dentist.id }}">{{ dentist.user.username}}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <input type="hidden" id="appointmentId" name="appointmentId">
-          </div>
-          <button type="submit" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700">
-            Assign
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-</dialog>
 
 <!-- JavaScript for Tab Switching -->
 <script>
-  function switchTab(tabName) {
-    // Remove 'active' class from all tabs
-    document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active', 'bg-blue-500', 'text-white'));
-    document.querySelectorAll('.tab-button').forEach(button => button.classList.add('bg-gray-200', 'text-gray-700'));
+    function switchTab(tabName) {
+        // Remove 'active' class from all tabs
+        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active', 'bg-blue-500', 'text-white'));
 
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
 
-    // Activate the selected tab and show its content
-    document.getElementById(`tab-${tabName}`).classList.add('active', 'bg-blue-700', 'text-white');
-    document.getElementById(`table-${tabName}`).classList.remove('hidden');
-  }
+        // Show the selected tab content and mark the button as active
+        document.getElementById(`tab-${tabName}`).classList.add('active', 'bg-blue-500', 'text-white');
+        document.getElementById(`table-${tabName}`).classList.remove('hidden');
+    }
 
-  // Initialize the first tab as active
-  document.addEventListener('DOMContentLoaded', () => {
-    switchTab('pending');
-  });
-
-  // Existing modal handling code remains unchanged
-  document.addEventListener('DOMContentLoaded', () => {
-    const assignDentistButtons = document.querySelectorAll('.openAssignDentistModal');
-    const assignDentistModal = document.getElementById('assignDentistModal');
-    const closeAssignDentistModal = document.getElementById('closeAssignDentistModal');
-    const appointmentIdInput = document.getElementById('appointmentId');
-    assignDentistButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const appointmentId = button.getAttribute('data-appointment-id');
-            appointmentIdInput.value = appointmentId;
-            assignDentistModal.showModal();
-        });
+    // Initialize the first tab as active
+    document.addEventListener('DOMContentLoaded', () => {
+        switchTab('pending');
     });
-    closeAssignDentistModal.addEventListener('click', () => {
-        assignDentistModal.close();
-    });
-    // Handle form submission with AJAX
-    document.getElementById('assignDentistForm').addEventListener('submit', (event) => {
-        event.preventDefault(); // Prevent default form submission
-        // Get form data
-        const form = event.target;
-        const formData = new FormData(form);
-        // Send AJAX request to the server
-        fetch(form.action, {
-            method: form.method,
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'X-Requested-With': 'XMLHttpRequest' // Optional: Indicates AJAX request
-            },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Close modal and show success message
-                assignDentistModal.close();
-                Swal.fire({
-                    title: 'Success!',
-                    text: data.message || 'Dentist assigned successfully!',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                });
-            } else {
-                // Show error message
-                Swal.fire({
-                    title: 'Error!',
-                    text: data.message || 'Failed to assign dentist. Please try again.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            Swal.fire({
-                title: 'Error!',
-                text: 'An unexpected error occurred. Check your internet connection.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        });
-    });
-});
-function toggleMenu(menuId) {
-    const menu = document.getElementById(menuId);
-    menu.classList.toggle('hidden');
-}
 </script>
 {% endblock %}

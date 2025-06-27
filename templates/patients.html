@@ -1,16 +1,14 @@
-{% extends 'base.html'%}
-  {% block title %} Patients {% endblock %}
-  {%load static %}
-
-  {% block content %}
-
-    <!--Page heading -->
-    <div class="flex flex-row justify-between items-center">
-        <div class="flex flex-row justify-start justify-between gap-8">
-            <h3 class="p-3 m-3 text-2xl font-semi-bold text-gray-700">Patients</h3>
-            {% if messages %}
-            <script>
-            document.addEventListener('DOMContentLoaded', function() {
+{% extends 'base.html' %}
+{% block title %} Patients {% endblock %}
+{% load static %}
+{% block content %}
+<!-- Page Heading -->
+<div class="flex flex-row justify-between items-center">
+    <div class="flex flex-row justify-start gap-8">
+        <h3 class="p-3 m-3 text-2xl font-semi-bold text-gray-700">Patients</h3>
+        {% if messages %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
                 {% for message in messages %}
                 Swal.fire({
                     icon: '{{ message.tags }}',
@@ -22,341 +20,274 @@
                 });
                 {% endfor %}
             });
-            </script>
-            {% endif %}
-
-
-            <div class="flex flex-row justify-between gap-4 p-3 m-3">
-                <button class="btn-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                      </svg>
-
-                </button>
-
-                <button class="btn-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-                      </svg>
-
-                </button>
-
-            </div>
-
-        </div>
-
-        <div class="flex flex-row p-3 m-3 ">
-            <p> 107 Patinets </p>
-            <nav aria-label="Page navigation example" class="pl-3">
-                <ul class="flex items-center -space-x-px h-8 text-sm">
-                  <li>
-                    <a href="#" class="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-                      <span class="sr-only">Previous</span>
-                      <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                      </svg>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">1</a>
-                  </li>
-                  
-                  <li>
-                    <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-                      <span class="sr-only">Next</span>
-                      <svg class="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                      </svg>
-                    </a>
-                  </li>
-                </ul>
-              </nav>
-
-        <div>
-
-        </div>
-
+        </script>
+        {% endif %}
     </div>
+    <!-- Branch Filter Dropdown (Visible Only to Admins) -->
+    {% if user.user_type == 1 %}
+    <form method="get" class="mb-3">
+        <label for="branch" class="mr-2 text-gray-700">Filter by Branch:</label>
+        <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+            <option value="">All Branches</option>
+            {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
+                    {{ branch.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
+</div>
 
-    </div>
-    <!--Table heading -->
-    <div class="flex flex-row p-3 m-3 mt-8 pt-8 justify-between item-center">
-      <div class="flex flex-row justify-between gap-8">
+<!-- Display User's Branch (Non-Admin Users) -->
+{% if user.branch and user.user_type != 1 %}
+<div class="mb-4 text-gray-700">
+    <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+</div>
+{% endif %}
+
+<!-- Table Heading -->
+<div class="flex flex-row p-3 m-3 mt-8 pt-8 justify-between item-center">
+    <div class="flex flex-row justify-between gap-8">
         <button id="list">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-          </svg>
-
-          <button id="grid">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75 2.25 12l4.179 2.25m0-4.5 5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0 4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0-5.571 3-5.571-3" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
             </svg>
-          </button>
-
-
-          <form class="max-w-md mx-auto px-3" action="{% url 'search_patient' %}" method="POST">
+        </button>
+        <button id="grid">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75 2.25 12l4.179 2.25m0-4.5 5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0 4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0-5.571 3-5.571-3" />
+            </svg>
+        </button>
+        <form class="max-w-md mx-auto px-3" action="{% url 'search_patient' %}" method="POST">
             {% csrf_token %}
             <label for="default-search" class="mb-2 text-sm font-medium text-black sr-only dark:text-black">Search</label>
             <div class="relative text-black">
                 <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                     <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                     </svg>
                 </div>
-                <input type="search" name="search_item" id="default-search" class="block w-full p-2 px-12 ps-10  text-sm text-black border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-300 dark:border-gray-300 dark:placeholder-gray-300 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search for Patient" required />
-                <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-3  dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
+                <input type="search" name="search_item" id="default-search" class="block w-full p-2 px-12 ps-10 text-sm text-black border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-300 dark:border-gray-300 dark:placeholder-gray-300 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search for Patient" required />
+                <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-3 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Search</button>
             </div>
-          </form>
-
-
-          </button>
-
-        </button>
-
-      </div>
-
-      <div>
-
-        <button data-open-modal class="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
-          + Add Patient
-        </button>
-
-      </div>
-
-
+        </form>
     </div>
-    <!--End of table heading-->
+    <div>
+        <button data-open-modal class="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
+            + Add Patient
+        </button>
+    </div>
+</div>
 
-    <!-- Patients Table-->
-
-
-    <div class="px-4 sm:px-6 lg:px-8">
-      <div class="mt-8 flow-root">
+<!-- Patients Table -->
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="mt-8 flow-root">
         <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <table class="min-w-full divide-y divide-gray-300">
-              <thead>
-                <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">ID</th>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Name</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date of birth</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Sex</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">service</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Address</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Nrc / Passport</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Phone</th>
-                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200 bg-white">
-                {% for patient in patients %}
-                <tr>
-                  <td>
-                    <div class="whitespace-nowrap py-5 pl-4 pr-3 sm:pl-0">
-                      <h5>{{ patient.id }}</h5>
-                    </div>
-                  </td>
-              
-                  <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
-                    <div class="flex items-center">
-                      <div class="size-11 shrink-0">
-                        <img
-                          class="size-11 rounded-full"
-                          src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                          alt=""
-                        />
-                        
-                      </div>
-                      <div class="ml-4">
-                        <div class="font-medium text-gray-900">{{ patient.first_name }} {{ patient.last_name }}</div>
-                        <div class="mt-1 text-gray-500">{{ patient.email }}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-5 text-sm">
-                    <div class="text-gray-700 text-md font-bold">{{ patient.date_of_birth }}</div>
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                    <div class="text-gray-500">{{ patient.gender }}</div>
-                  </td>
-                  <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-700">Teeth Whitening</td>
-                  <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">{{ patient.address }}</td>
-                  <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-700">{{ patient.nrc }}</td>
-                  <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">{{ patient.contact_number }}</td>
-                  <td class="relative whitespace-nowrap py-5 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                    <div>
-                      <button
-                        type="button"
-                        class="-my-2 flex items-center rounded-full bg-white p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        id="menu-{{ patient.id }}-button"
-                        aria-expanded="false"
-                        aria-haspopup="true"
-                        onclick="toggleMenu('menu-{{ patient.id }}')"
-                      >
-                        <span class="sr-only">Open options</span>
-                        <svg class="size-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
-                          <path d="M10 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM10 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM11.5 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
-                        </svg>
-                      </button>
-                    </div>
-              
-                    <div
-                      id="menu-{{ patient.id }}"
-                      class="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
-                      role="menu"
-                      aria-orientation="vertical"
-                      aria-labelledby="menu-{{ patient.id }}-button"
-                    >
-                      <div class="p-4" role="none">
-                        <a href="{% url 'patient_details' patient.id %}"  class="flex justify-between px-4 py-2 text-sm text-gray-700" role="menuitem">
-                          <span>View</span>
-                        </a>
-                        <a href="#" class="flex justify-between px-4 text-red-800 py-2 text-sm text-gray-700" role="menuitem">
-                          <span>Delete</span>
-                        </a>
-
-                        <a href="{% url 'treatment_request' patient.id %}" class="flex justify-between px-4 py-2 text-sm text-gray-700" role="menuitem">
-                          
-                            <span>treatment</span>
-                        
-                        </a>
-                        
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-              
-            
-
-
-    <!-- Add Patient Modal -->
-    <dialog data-modal>
-      <div id="crud-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto flex overflow-x-hidden inset-0 fixed z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-        <div class="relative p-4 w-full max-w-md max-h-full">
-          <!-- Modal content -->
-          <div class="relative bg-white rounded-lg shadow dark:bg-gray-300">
-            <!-- Modal header -->
-            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-black">
-                Add New Patient
-              </h3>
-              <button data-close-modal type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0 0l6 6M7 7l6-6M7 7l-6 6" />
-                </svg>
-              </button>
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <table class="min-w-full divide-y divide-gray-300">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">ID</th>
+                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Name</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date of Birth</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Sex</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Service</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Address</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">NRC / Passport</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Phone</th>
+                            <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        {% for patient in patients %}
+                        <tr>
+                            <td>
+                                <div class="whitespace-nowrap py-5 pl-4 pr-3 sm:pl-0">
+                                    <h5>{{ patient.id }}</h5>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
+                                <div class="flex items-center">
+                                    <div class="size-11 shrink-0">
+                                        <img
+                                            class="size-11 rounded-full"
+                                            src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                                            alt=""
+                                        />
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="font-medium text-gray-900">{{ patient.first_name }} {{ patient.last_name }}</div>
+                                        <div class="mt-1 text-gray-500">{{ patient.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-5 text-sm">
+                                <div class="text-gray-700 text-md font-bold">{{ patient.date_of_birth }}</div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+                                <div class="text-gray-500">{{ patient.gender }}</div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-700">Teeth Whitening</td>
+                            <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">{{ patient.address }}</td>
+                            <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-700">{{ patient.nrc }}</td>
+                            <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">{{ patient.contact_number }}</td>
+                            <td class="relative whitespace-nowrap py-5 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                                <div>
+                                    <button
+                                        type="button"
+                                        class="-my-2 flex items-center rounded-full bg-white p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        id="menu-{{ patient.id }}-button"
+                                        aria-expanded="false"
+                                        aria-haspopup="true"
+                                        onclick="toggleMenu('menu-{{ patient.id }}')"
+                                    >
+                                        <span class="sr-only">Open options</span>
+                                        <svg class="size-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
+                                            <path d="M10 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM10 8.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM11.5 15.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div
+                                    id="menu-{{ patient.id }}"
+                                    class="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
+                                    role="menu"
+                                    aria-orientation="vertical"
+                                    aria-labelledby="menu-{{ patient.id }}-button"
+                                >
+                                    <div class="p-4" role="none">
+                                        <a href="{% url 'patient_details' patient.id %}" class="flex justify-between px-4 py-2 text-sm text-gray-700" role="menuitem">
+                                            <span>View</span>
+                                        </a>
+                                        <a href="#" class="flex justify-between px-4 text-red-800 py-2 text-sm text-gray-700" role="menuitem"> 
+                                            <span>Delete</span>
+                                        </a>
+                                        <a href="{% url 'treatment_request' patient.id %}" class="flex justify-between px-4 py-2 text-sm text-gray-700" role="menuitem">
+                                            <span>Treatment</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-gray-500">No patients found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <!-- Modal body -->
-            <form class="p-4 md:p-5" method='POST' action="{% url 'create-patient' %}">
-              {% csrf_token %}
-              <div class="grid gap-4 mb-4 grid-cols-2">
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">First Name</label>
-                  <input type="text" name="first-name" id="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient first name" required />
-                </div>
-
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Last Name</label>
-                  <input type="text" name="last-name" id="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient last name" required />
-                </div>
-
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Nrc</label>
-                  <input type="text" name="nrc" id="nrc" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient nrc" required />
-                </div>
-
-
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Email</label>
-                  <input type="text" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient email" required />
-                </div>
-
-
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Address</label>
-                  <input type="text" name="address" id="address" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient address" required />
-                </div>
-
-
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Phone</label>
-                  <input type="text" name="phone" id="nrc" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient phone" required />
-                </div>
-                <div class="col-span-2">
-                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Gender</label>
-                  <div id="gender" class="flex items-center space-x-4">
-                    <label class="flex items-center">
-                      <input type="radio" name="gender" value="M" required class="mr-2">
-                      Male
-                    </label>
-                    <label class="flex items-center">
-                      <input type="radio" name="gender" value="F" required class="mr-2">
-                      Female
-                    </label>
-                    
-                  </div>
-                </div>
-
-                <div class="col-span-2 sm:col-span-1">
-                  <label for="price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Date of birth</label>
-                  <input type="date" name="dob" id="dob" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Date of birth" required />
-                </div>
-                <div class="col-span-2">
-                  <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Medical History</label>
-                  <textarea id="history" rows="4" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter medical history"></textarea>
-                </div>
-              </div>
-              <button type="submit" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700">
-                <svg class="me-1 -ms-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                </svg>
-                Add New Patient
-              </button>
-            </form>
-          </div>
         </div>
-      </div>
-    </dialog>
+    </div>
+</div>
 
+<!-- Add Patient Modal -->
+<dialog data-modal>
+    <div id="crud-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto flex overflow-x-hidden inset-0 fixed z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
+        <div class="relative p-4 w-full max-w-md max-h-full">
+            <!-- Modal content -->
+            <div class="relative bg-white rounded-lg shadow dark:bg-gray-300">
+                <!-- Modal header -->
+                <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-black">
+                        Add New Patient
+                    </h3>
+                    <button data-close-modal type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1l6 6m0 0l6 6M7 7l6-6M7 7l-6 6" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- Modal body -->
+                <form class="p-4 md:p-5" method="POST" action="{% url 'create-patient' %}">
+                    {% csrf_token %}
+                    <div class="grid gap-4 mb-4 grid-cols-2">
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">First Name</label>
+                            <input type="text" name="first-name" id="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient first name" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Last Name</label>
+                            <input type="text" name="last-name" id="name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient last name" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">NRC</label>
+                            <input type="text" name="nrc" id="nrc" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient NRC" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Email</label>
+                            <input type="text" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient email" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Address</label>
+                            <input type="text" name="address" id="address" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient address" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Phone</label>
+                            <input type="text" name="phone" id="nrc" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter patient phone" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Gender</label>
+                            <div id="gender" class="flex items-center space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="gender" value="M" required class="mr-2">
+                                    Male
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="gender" value="F" required class="mr-2">
+                                    Female
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Date of Birth</label>
+                            <input type="date" name="dob" id="dob" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Date of birth" required />
+                        </div>
+                        <div class="col-span-2">
+                            <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Medical History</label>
+                            <textarea id="history" rows="4" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Enter medical history"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700">
+                        <svg class="me-1 -ms-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add New Patient
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</dialog>
 
-
-
-    <script>
+<script>
     // JavaScript to handle modal functionality
     document.addEventListener('DOMContentLoaded', () => {
-      // Select the elements
-      const openModalButton = document.querySelector("[data-open-modal]");
-      const closeModalButton = document.querySelector("[data-close-modal]");
-      const modal = document.querySelector("[data-modal]");
+        const openModalButton = document.querySelector("[data-open-modal]");
+        const closeModalButton = document.querySelector("[data-close-modal]");
+        const modal = document.querySelector("[data-modal]");
 
-      // Ensure elements exist before attaching event listeners
-      if (!openModalButton || !closeModalButton || !modal) {
-        console.error("Modal elements not found. Ensure correct selectors.");
-        return;
-      }
+        if (!openModalButton || !closeModalButton || !modal) {
+            console.error("Modal elements not found. Ensure correct selectors.");
+            return;
+        }
 
-      // Open the modal
-      openModalButton.addEventListener("click", () => {
-        modal.showModal(); // For <dialog>
-      });
+        openModalButton.addEventListener("click", () => {
+            modal.showModal();
+        });
 
-      // Close the modal
-      closeModalButton.addEventListener("click", () => {
-        modal.close(); // For <dialog>
-      });
+        closeModalButton.addEventListener("click", () => {
+            modal.close();
+        });
     });
 
     function toggleMenu(menuId) {
-      const menu = document.getElementById(menuId);
-      if (menu.classList.contains('hidden')) {
-        menu.classList.remove('hidden');
-      } else {
-        menu.classList.add('hidden');
-      }
+        const menu = document.getElementById(menuId);
+        if (menu.classList.contains('hidden')) {
+            menu.classList.remove('hidden');
+        } else {
+            menu.classList.add('hidden');
+        }
     }
-
-    </script>
+</script>
 {% endblock %}

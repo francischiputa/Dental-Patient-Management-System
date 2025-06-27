@@ -2,12 +2,28 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto mt-10 bg-gray-800 text-gray-200 p-8 rounded-lg shadow-lg">
-    <div class="flex justify-between items-end">
-        <h1 class="text-2xl font-bold text-white mb-6">Superior Dental Solutions Limited</h1>
-        <a href="{% url 'quotation_list' %}" class="bg-green-800 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
-            Generate Invoice
-        </a>
+    <!-- Branch Filter Dropdown (Visible Only to Admins) -->
+    {% if user.user_type == 1 %}
+    <div class="flex justify-between items-end mb-4">
+        <h1 class="text-2xl font-bold text-white">Superior Dental Solutions Limited</h1>
+        <form method="get" class="mb-3">
+            <label for="branch" class="mr-2 text-gray-300">Filter by Branch:</label>
+            <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+                <option value="">All Branches</option>
+                {% for branch in branches %}
+                    <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
+                        {{ branch.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
     </div>
+    {% else %}
+    <div class="flex justify-between items-end mb-4">
+        <h1 class="text-2xl font-bold text-white">Superior Dental Solutions Limited</h1>
+    </div>
+    {% endif %}
+
     <h2 class="text-2xl font-bold text-blue-400 mb-6">Quotation Details</h2>
 
     <!-- Patient Info -->
@@ -16,6 +32,7 @@
         <p><span class="font-medium">Name:</span> {{ quotation.patient.first_name }} {{ quotation.patient.last_name }}</p>
         <p><span class="font-medium">Email:</span> {{ quotation.patient.email }}</p>
         <p><span class="font-medium">Phone:</span> {{ quotation.patient.phone }}</p>
+        <p><span class="font-medium">Branch:</span> {{ quotation.patient.branch.name|default:"No Branch Assigned" }}</p>
     </div>
 
     <!-- Quotation Info -->
@@ -23,9 +40,11 @@
         <h2 class="text-lg font-semibold text-gray-300">Quotation Details</h2>
         <p><span class="font-medium">Quotation ID:</span> #{{ quotation.id }}</p>
         <p><span class="font-medium">Date:</span> {{ quotation.updated_at }}</p>
-        <p><span class="font-medium">Status:</span> <span class="px-3 py-1 text-xs font-bold text-white {% if quotation.status == 'approved' %} bg-green-600 {% else %} bg-yellow-600 {% endif %} rounded">
-            {{ quotation.status|title }}
-        </span></p>
+        <p><span class="font-medium">Status:</span> 
+            <span class="px-3 py-1 text-xs font-bold text-white {% if quotation.status == 'approved' %} bg-green-600 {% else %} bg-yellow-600 {% endif %} rounded">
+                {{ quotation.status|title }}
+            </span>
+        </p>
     </div>
 
     <!-- Services Table -->
@@ -47,7 +66,7 @@
                         <td class="px-4 py-2">{{ item.service.name }}</td>
                         <td class="px-4 py-2 text-center">{{ item.quantity }}</td>
                         <td class="px-4 py-2 text-right">K{{ item.price_at_time }}</td>
-                        <td class="px-4 py-2 text-right">{{ item.total_price }}</td>
+                        <td class="px-4 py-2 text-right">K{{ item.total_price }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
