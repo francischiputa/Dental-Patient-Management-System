@@ -265,57 +265,91 @@ def CreatePatient(request):
             return render(request, 'create_patient.html')
     branches = Branch.objects.all()  # Pass branches to the form
     return render(request, 'create_patient.html', {'branches': branches})
-
 @login_required
 def AppointmentsPage(request):
-    # Debugging logs (optional - remove in production)
-    print("DEBUG: request.user.branch =", request.user.branch)
-    print("DEBUG: request.user.branch_id =", request.user.branch_id)
-
-    # Always get branch instance from branch_id to avoid string issues
-    branch_id = getattr(request.user, 'branch_id', None)
-    user_branch = None
-    if branch_id:
-        try:
-            user_branch = Branch.objects.get(id=branch_id)
-        except Branch.DoesNotExist:
-            messages.warning(request, "Your assigned branch does not exist.")
-
-    # Warn dentist/staff users without a valid branch
+    # Get the logged-in user and their branch (if any)
+    user_branch = getattr(request.user, 'branch', None)
+    
+    # Debug: Print the type and value of user_branch
+    print(f"DEBUG: user_branch type: {type(user_branch)}, value: {user_branch}")
+    
+    # Log a warning if the branch is missing or invalid
     if request.user.user_type in [2, 3] and not user_branch:
         messages.warning(request, "Your account is not assigned to a branch. Please contact the administrator.")
-
-    # Admin users can see all branches for filtering
+    
+    # Fetch all branches for filtering (only for admin users)
     branches = Branch.objects.all() if request.user.user_type == 1 else None
-
-    # Filter dentists by user's branch only if user_branch is valid
+    
+    # Handle user_branch properly - convert string to Branch instance if needed
+    branch_instance = None
     if user_branch:
-        dentists = Dentist.objects.filter(user__branch=user_branch)
+        if isinstance(user_branch, Branch):
+            branch_instance = user_branch
+            print(f"DEBUG: Using existing Branch instance: {branch_instance}")
+        else:
+            print(f"DEBUG: user_branch is not a Branch instance, it's: {type(user_branch)}")
+            # Handle case where user_branch is a string (likely the __str__ representation)
+            try:
+                # Try to parse "RhodesPark - Lusaka" format
+                if " - " in str(user_branch):
+                    name_part = str(user_branch).split(" - ")[0]
+                    location_part = str(user_branch).split(" - ")[1]
+                    branch_instance = Branch.objects.get(name=name_part, location=location_part)
+                else:
+                    # Try to find by name only
+                    branch_instance = Branch.objects.get(name=str(user_branch))
+                print(f"DEBUG: Found branch_instance: {branch_instance}")
+            except Branch.DoesNotExist:
+                print(f"DEBUG: Could not find branch for: {user_branch}")
+                messages.warning(request, f"Branch '{user_branch}' not found. Please contact administrator.")
+            except Branch.MultipleObjectsReturned:
+                # If multiple branches match, get the first one
+                if " - " in str(user_branch):
+                    name_part = str(user_branch).split(" - ")[0]
+                    location_part = str(user_branch).split(" - ")[1]
+                    branch_instance = Branch.objects.filter(name=name_part, location=location_part).first()
+                else:
+                    branch_instance = Branch.objects.filter(name=str(user_branch)).first()
+                print(f"DEBUG: Multiple branches found, using first: {branch_instance}")
+    
+    # Fetch dentists based on the branch instance
+    if branch_instance:
+        print(f"DEBUG: branch_instance type: {type(branch_instance)}, value: {branch_instance}")
+        print(f"DEBUG: branch_instance.id: {branch_instance.id}")
+        # Try filtering by branch ID instead of the instance
+        try:
+            dentists = Dentist.objects.filter(user__branch_id=branch_instance.id)
+            print(f"DEBUG: Successfully filtered dentists by branch_id: {branch_instance.id}")
+        except Exception as e:
+            print(f"DEBUG: Error filtering dentists: {e}")
+            dentists = Dentist.objects.all()
     else:
+        print("DEBUG: No branch_instance, showing all dentists")
         dentists = Dentist.objects.all()
-
+    
+    # Admin-specific branch filtering
     selected_branch_id = request.GET.get('branch') if request.user.user_type == 1 else None
-
-    # Filter appointments according to user type and branch
-    if user_branch and request.user.user_type != 1:
-        pending_appointments = Appointment.objects.filter(patient__branch=user_branch, status='Pending')
-        scheduled_appointments = Appointment.objects.filter(patient__branch=user_branch, status='Scheduled')
-        completed_appointments = Appointment.objects.filter(patient__branch=user_branch, status='Completed')
+    
+    # Filter data based on the user's branch
+    if branch_instance and request.user.user_type != 1:  # Non-admin users see only their branch's data
+        pending_appointments = Appointment.objects.filter(patient__branch=branch_instance, status='Pending')
+        scheduled_appointments = Appointment.objects.filter(patient__branch=branch_instance, status='Scheduled')
+        completed_appointments = Appointment.objects.filter(patient__branch=branch_instance, status='Completed')
     else:
+        # Admin users see data for all branches or the selected branch
         pending_appointments = Appointment.objects.filter(status='Pending')
         scheduled_appointments = Appointment.objects.filter(status='Scheduled')
         completed_appointments = Appointment.objects.filter(status='Completed')
-
-        # If admin filtered by a selected branch
+        
         if selected_branch_id:
             try:
                 selected_branch = Branch.objects.get(id=selected_branch_id)
-                pending_appointments = pending_appointments.filter(patient__branch=selected_branch)
-                scheduled_appointments = scheduled_appointments.filter(patient__branch=selected_branch)
-                completed_appointments = completed_appointments.filter(patient__branch=selected_branch)
+                pending_appointments = Appointment.objects.filter(patient__branch=selected_branch, status='Pending')
+                scheduled_appointments = Appointment.objects.filter(patient__branch=selected_branch, status='Scheduled')
+                completed_appointments = Appointment.objects.filter(patient__branch=selected_branch, status='Completed')
             except Branch.DoesNotExist:
                 messages.warning(request, "Invalid branch selected. Showing all data.")
-
+    
     return render(request, 'appointments.html', {
         'pending_appointments': pending_appointments,
         'scheduled_appointments': scheduled_appointments,
