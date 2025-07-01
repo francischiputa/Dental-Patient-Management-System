@@ -1,0 +1,167 @@
+<!-- inventory/templates/inventory/form.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+  {% if object %}
+    Edit {{ object.name }} - Inventory
+  {% else %}
+    Add New Inventory Item - Inventory
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if object %}
+        Edit Inventory Item
+      {% else %}
+        Add New Inventory Item
+      {% endif %}
+    </h1>
+    <a href="{% url 'item_list' %}" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+      Back to List
+    </a>
+  </div>
+
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:p-6">
+      <form method="post" class="space-y-8">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900">Basic Information</h3>
+          <p class="mt-1 text-sm text-gray-500">Enter the basic details of the inventory item.</p>
+          
+          <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+            <!-- Item Name -->
+            <div>
+              <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+                {{ form.name.label }}
+              </label>
+              <div class="mt-2">
+                {{ form.name }}
+                {% if form.name.errors %}
+                  <div class="text-red-600 text-sm mt-1">{{ form.name.errors.as_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+                {{ form.category.label }}
+              </label>
+              <div class="mt-2">
+                {{ form.category }}
+                {% if form.category.errors %}
+                  <div class="text-red-600 text-sm mt-1">{{ form.category.errors.as_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Supplier -->
+            <div>
+              <label for="{{ form.supplier.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+                {{ form.supplier.label }}
+              </label>
+              <div class="mt-2">
+                {{ form.supplier }}
+                {% if form.supplier.errors %}
+                  <div class="text-red-600 text-sm mt-1">{{ form.supplier.errors.as_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Unit Price -->
+            <div>
+              <label for="{{ form.unit_price.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+                {{ form.unit_price.label }}
+              </label>
+              <div class="mt-2">
+                <div class="relative rounded-md shadow-sm">
+                  <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <span class="text-gray-500 sm:text-sm">K</span>
+                  </div>
+                  {{ form.unit_price }}
+                </div>
+                {% if form.unit_price.errors %}
+                  <div class="text-red-600 text-sm mt-1">{{ form.unit_price.errors.as_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stock Details -->
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900">Stock Details</h3>
+          <p class="mt-1 text-sm text-gray-500">Set initial stock and reorder thresholds.</p>
+          
+          <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+            <!-- Quantity -->
+            <div>
+              <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+                {{ form.quantity.label }}
+              </label>
+              <div class="mt-2">
+                {{ form.quantity }}
+                {% if form.quantity.errors %}
+                  <div class="text-red-600 text-sm mt-1">{{ form.quantity.errors.as_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Reorder Level -->
+            <div>
+              <label for="{{ form.reorder_level.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+                {{ form.reorder_level.label }}
+              </label>
+              <div class="mt-2">
+                {{ form.reorder_level }}
+                {% if form.reorder_level.errors %}
+                  <div class="text-red-600 text-sm mt-1">{{ form.reorder_level.errors.as_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="border-b border-gray-200 pb-6">
+          <h3 class="text-lg font-medium text-gray-900">Description</h3>
+          <p class="mt-1 text-sm text-gray-500">Additional information about this item.</p>
+          
+          <div class="mt-6">
+            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.description.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.description.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-4">
+          <a href="{% url 'item_list' %}" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            Cancel
+          </a>
+          <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            {% if object %}
+              Update Item
+            {% else %}
+              Create Item
+            {% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

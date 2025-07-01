@@ -1,64 +1,148 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h1>Invoice #{{ object.id }}</h1>
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">Patient: {{ object.patient.name }}</h5>
-      <p class="card-text">Total: {{ object.total_amount }}</p>
-      <p class="card-text">Status: {{ object.get_status_display }}</p>
-      <p class="card-text">Remaining Balance: {{ remaining_balance }}</p>
+<div class="max-w-4xl mx-auto mt-10 bg-gray-800 text-gray-200 p-8 rounded-lg shadow-lg">
+    <div class="flex justify-between items-end">
+        <h1 class="text-2xl font-bold text-white mb-6">Superior Dental Solutions Limited</h1>
+        <!-- If payment status is paid then put print receipt button-->
+        {% if invoice.status == 'paid' %}
+        <a href="{% url 'turn_invoice_to_receipt' invoice.id %}" class="bg-green-800 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
+            Make a Receipt
+        </a>
+        {% else%}
+        <!-- Make Payment Button -->
+        
+        <button id="make-payment-btn" class="bg-green-800 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
+            Make Payment
+        </button>
+        {% endif %}
+      
     </div>
-  </div>
+    <h2 class="text-2xl font-bold text-blue-400 mb-6">Invoice Details</h2>
 
-  <h3>Services</h3>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Service</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Subtotal</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in object.invoiceservice_set.all %}
-        <tr>
-          <td>{{ item.service.name }}</td>
-          <td>{{ item.price_at_time }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>{{ item.price_at_time|mul:item.quantity }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <!-- Patient Info -->
+    <div class="mb-6 border-b border-gray-700 pb-4">
+        <h2 class="text-lg font-semibold text-gray-300">Patient Information</h2>
+        <p><span class="font-medium">Name:</span> {{ invoice.patient.first_name }} {{ invoice.patient.last_name }}</p>
+        <p><span class="font-medium">Email:</span> {{ invoice.patient.email }}</p>
+        <p><span class="font-medium">Phone:</span> {{ invoice.patient.phone }}</p>
+    </div>
 
-  <h3>Payments</h3>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Amount</th>
-        <th>Method</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for payment in payments %}
-        <tr>
-          <td>{{ payment.payment_date }}</td>
-          <td>{{ payment.amount }}</td>
-          <td>{{ payment.get_payment_method_display }}</td>
-          <td>{{ payment.get_status_display }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <!-- Invoice Info -->
+    <div class="mb-6 border-b border-gray-700 pb-4">
+        <h2 class="text-lg font-semibold text-gray-300">Invoice Details</h2>
+        <p><span class="font-medium">Invoice ID:</span> #{{ invoice.id }}</p>
+        <p><span class="font-medium">Date:</span> {{ invoice.updated_at }}</p>
+        <p><span class="font-medium">Status:</span> 
+            <span class="px-3 py-1 text-xs font-bold text-white {% if invoice.status == 'paid' %} bg-green-600 {% elif invoice.status == 'partially paid' %} bg-yellow-600 {% else %} bg-gray-600 {% endif %} rounded">
+                {{ invoice.status|title }}
+            </span>
+        </p>
+    </div>
 
-  <h3>Make Payment</h3>
-  <form method="post" action="{% url 'create_payment' object.id %}">
-    {% csrf_token %}
-    {{ payment_form.as_p }}
-    <button type="submit" class="btn btn-success">Process Payment</button>
-  </form>
+    <!-- Services Table -->
+    <div class="mb-6">
+        <h2 class="text-lg font-semibold text-gray-300">Services Included</h2>
+        <div class="overflow-x-auto mt-3">
+            <table class="min-w-full border border-gray-700">
+                <thead>
+                    <tr class="bg-gray-700 text-gray-300">
+                        <th class="px-4 py-2 text-left">Service</th>
+                        <th class="px-4 py-2 text-center">Quantity</th>
+                        <th class="px-4 py-2 text-right">Price</th>
+                        <th class="px-4 py-2 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in services_with_subtotals %}
+                    <tr class="border-t border-gray-700">
+                        <td class="px-4 py-2">{{ item.services}}</td>
+                        <td class="px-4 py-2 text-center">{{ item.quantity }}</td>
+                        <td class="px-4 py-2 text-right">K{{ item.price_at_time|floatformat:2 }}</td>
+                        <td class="px-4 py-2 text-right">K{{ item.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="border-t border-gray-700">
+                        <td colspan="3" class="px-4 py-2 font-semibold text-right">Total Amount:</td>
+                        <td class="px-4 py-2 font-semibold text-right text-green-400">K{{ invoice.total_amount|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex justify-between">
+      {% if invoice.id %}
+        <a href="{% url 'download_invoice_pdf' invoice.id %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
+            Download PDF
+        </a>
+        {% else %}
+         <p>Invoice ID is missing.</p>
+     {% endif %}
+        <a href="{% url 'invoice_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
+            Back to List
+        </a>
+    </div>
+</div>
+
+<!-- Modal Prompt -->
+<div id="payment-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 text-gray-200 p-6 rounded-lg shadow-lg w-96">
+        <h2 class="text-xl font-bold text-white mb-4">Choose Payment Type</h2>
+        <div class="space-y-4">
+            <button id="full-payment-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
+                Full Payment
+            </button>
+            <button id="partial-payment-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
+                Partial Payment
+            </button>
+            <button id="cancel-payment-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Modal -->
+<script>
+    const makePaymentBtn = document.getElementById('make-payment-btn');
+    const paymentModal = document.getElementById('payment-modal');
+    const fullPaymentBtn = document.getElementById('full-payment-btn');
+    const partialPaymentBtn = document.getElementById('partial-payment-btn');
+    const cancelPaymentBtn = document.getElementById('cancel-payment-btn');
+
+    // Show modal when "Make Payment" is clicked
+    makePaymentBtn.addEventListener('click', () => {
+        paymentModal.classList.remove('hidden');
+    });
+
+    // Handle Full Payment
+    fullPaymentBtn.addEventListener('click', () => {
+        const invoiceId = {{ invoice.id }};  // Ensure this is not empty
+        if (!invoiceId) {
+            console.error("Invoice ID is missing or invalid.");
+            return;
+        }
+        window.location.href = "{% url 'make_full_payment' invoice_id=invoice.id %}";
+    });
+
+    // Handle Partial Payment
+    partialPaymentBtn.addEventListener('click', () => {
+        const invoiceId = {{ invoice.id }};  // Ensure this is not empty
+        if (!invoiceId) {
+            console.error("Invoice ID is missing or invalid.");
+            return;
+        }
+        window.location.href = "{% url 'make_partial_payment' invoice_id=invoice.id %}";
+    });
+
+    // Close modal when "Cancel" is clicked
+    cancelPaymentBtn.addEventListener('click', () => {
+        paymentModal.classList.add('hidden');
+    });
+</script>
+
 {% endblock %}

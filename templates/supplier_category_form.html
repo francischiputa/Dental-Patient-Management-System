@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} {{ type|default:"Item" }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <h2 class="text-lg font-medium text-gray-900 mb-4">{% if object %}Edit{% else %}Add{% endif %} {{ type|default:"Item" }}</h2>
+      
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-x-6 gap-y-6">
+          <!-- Name -->
+          <div>
+            <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.name.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.name }}
+              {% if form.name.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.name.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Description or Contact Person -->
+          {% if form.description %}
+          <div>
+            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.description.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.description.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+          <div>
+            <label for="{{ form.contact_person.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.contact_person.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.contact_person }}
+              {% if form.contact_person.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.contact_person.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Email (for supplier) -->
+          {% if form.email %}
+          <div>
+            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.email.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.email }}
+              {% if form.email.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.email.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Phone -->
+          {% if form.phone %}
+          <div>
+            <label for="{{ form.phone.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.phone.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.phone }}
+              {% if form.phone.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.phone.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          
+          <!-- Address (for supplier) -->
+          {% if form.address %}
+          <div>
+            <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.address.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.address }}
+              {% if form.address.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.address.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <a href="{% if type == 'supplier' %}{% url 'supplier_list' %}{% else %}{% url 'category_list' %}{% endif %}" 
+             class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            Cancel
+          </a>
+          <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+            {% if object %}Update{% else %}Create{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

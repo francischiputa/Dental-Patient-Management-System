@@ -13,6 +13,15 @@ class InvoiceForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple
     )
 
+class QuotationForm(forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = ['patient', 'appointment', 'services']
+
+    services = forms.ModelMultipleChoiceField(
+        queryset=Service.objects.all(),
+        widget=forms.CheckboxSelectMultiple
+    )
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment

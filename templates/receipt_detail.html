@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %} Receipt Details {% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Receipt Details</h2>
+
+    <!-- Receipt Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Receipt #{{ receipt.receipt_number }}</h5>
+            <p class="card-text"><strong>Patient:</strong> {{ receipt.patient.first_name }} {{ receipt.patient.last_name }}</p>
+            <p class="card-text"><strong>Total Amount:</strong> K{{ receipt.total_amount }}</p>
+            <p class="card-text"><strong>Issued At:</strong> {{ receipt.issued_at|date:"M d, Y H:i" }}</p>
+            <p class="card-text"><strong>Status:</strong> {{ receipt.status|title }}</p>
+        </div>
+    </div>
+
+    <!-- Receipt Items Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Item/Service</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in receipt_items %}
+                    <tr>
+                        <td>{{ item.item.name }}</td>
+                        <td>K{{ item.price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>K{{ item.price|floatformat:2|mul:item.quantity }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Total Amount:</th>
+                    <th>K{{ receipt.total_amount }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Download Button -->
+    <div class="d-flex justify-content-end">
+        <a href="{% url 'download_receipt_pdf' receipt.id %}" class="btn btn-primary">
+            Download Receipt
+        </a>
+    </div>
+</div>
+{% endblock %}

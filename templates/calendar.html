@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %} Calendar | Superior Dental {% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ current_month }}</h1>
+  
+<!-- Weekday Headers -->
+{% for day in week_days %}
+  <div class="text-center font-semibold text-gray-500 py-2">{{ day }}</div>
+{% endfor %}
+
+<!-- Empty days for alignment -->
+{% with ""|center:today.weekday as range %}
+  {% for _ in range %}
+    <div class="border border-transparent"></div>
+  {% endfor %}
+{% endwith %}
+
+<!-- Calendar Days -->
+{% for item in days_with_appointments %}
+  <div class="min-h-24 border border-gray-200 p-2">
+    <div class="text-sm font-medium text-gray-900">{{ item.day }}</div>
+    <div class="mt-1 space-y-1">
+      {% for appt in item.appointments %}
+        <div class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
+          {{ appt.date_time|date:"H:i" }} - {{ appt.service }}
+        </div>
+      {% empty %}
+        <div class="text-xs text-gray-400">No appointments</div>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+
+{% endblock %}

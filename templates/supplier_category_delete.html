@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <h2 class="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h2>
+      <p class="mb-4">Are you sure you want to delete <strong>{{ object.name }}</strong>?</p>
+      <p class="mb-6 text-sm text-red-600">This action cannot be undone and may affect existing inventory items.</p>
+      
+      <div class="flex justify-end space-x-4">
+        <a href="{% if type == 'supplier' %}{% url 'supplier_list' %}{% else %}{% url 'category_list' %}{% endif %}" 
+           class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+          Cancel
+        </a>
+        <form method="post" id="deleteForm" class="inline">
+          {% csrf_token %}
+          <button type="submit" 
+                  id="deleteButton"
+                  class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+            Delete {{ type|title }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const deleteButton = document.getElementById('deleteButton');
+  const deleteForm = document.getElementById('deleteForm');
+  
+  if (deleteButton && deleteForm) {
+    deleteButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          deleteForm.submit();
+        }
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

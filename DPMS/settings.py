@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'core',
     'dentist',
     'patient',
+    'inventory',
     'user_accounts',
     'appointment',
     'notifications',

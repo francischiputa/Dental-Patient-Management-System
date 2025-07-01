@@ -20,7 +20,10 @@ class Appointment(models.Model):
     branch = models.ForeignKey(Branch,blank=True, null=True, on_delete=models.CASCADE)  # Link to branch
 
     def __str__(self):
-        return f"Appointment for {self.patient} with {self.dentist.user.username} on {self.date_time}"
+        patient_name = self.patient.first_name if self.patient else "Unknown Patient"
+        dentist_name = self.dentist.user.username if self.dentist and self.dentist.user else "Unknown Dentist"
+        appointment_date = self.date_time.strftime('%Y-%m-%d %H:%M') if self.date_time else "No Date"
+        return f"Appointment for {patient_name} with {dentist_name} on {appointment_date}"
 
 class Service(models.Model):
     name = models.CharField(max_length=100)

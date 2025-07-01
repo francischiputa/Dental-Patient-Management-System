@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="font-bold text-md">Partial Payment</h1>
+            <form class="max-w-4xl mx-auto bg-slate-800 p-6 px-12 rounded-lg shadow-lg mt-10" action="{% url 'partial_payment' %}" method="POST">
+                {% csrf_token %}
+                
+                <!-- Patient Information -->
+                <div class="mb-5">
+                    <label for="balance" class="block mb-2 text-sm font-medium text-gray-300">Balance</label>
+                    <input type="text" name="balance" id="balance" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" value="{{ remaining_balance }}" readonly />
+                </div>
+
+                <div class="mb-5">
+                    <label for="amount" class="block mb-2 text-sm font-medium text-gray-300">Amount</label>
+                    <input type="text" id="amount" name="amount" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Enter Full Amount" required />
+                </div>
+
+                <div class="mb-5">
+                    <label for="invoice_number" class="block mb-2 text-sm font-medium text-gray-300">Invoice Number</label>
+                    <input type="text" name="invoice_id" id="invoice_id" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" value="{{ invoice.id }}" readonly />
+                </div>
+
+                <div class="mb-5">
+                    <label for="invoice_number" class="block mb-2 text-sm font-medium text-gray-300">Patient ID</label>
+                    <input type="text" name="patient_id" id="patient_id" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" value="{{ invoice.patient.id }}" readonly />
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div class="mb-5">
+                    <label for="payment_method" class="block mb-2 text-sm font-medium text-gray-300">Payment Method</label>
+                    <select id="payment_method" name="payment_method" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                        <option value="" disabled selected>Select Payment Method</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="Mobile Money">Mobile Money</option>
+                    </select>
+                </div>
+
+                <!-- Transaction Number Field (Hidden by Default) -->
+                <div class="mb-5" id="transaction-container" style="display: none;">
+                    <label for="transaction_number" class="block mb-2 text-sm font-medium text-gray-300">Transaction Number</label>
+                    <input type="text" id="transaction_id" name="transaction_id" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Enter Transaction Number or Ref #" />
+                </div>
+
+                <!-- Notes text area -->
+                <div class="mb-5">
+                    <label for="notes" class="block mb-2 text-sm font-medium text-gray-300">Notes</label>
+                    <textarea id="notes" name="notes" rows="4" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Add any notes here..."></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-8 py-3 text-center w-full sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 mt-4">Pay</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Dynamic Visibility of Transaction Container -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const transactionContainer = document.getElementById('transaction-container');
+
+    // Add event listener to the payment method dropdown
+    paymentMethodSelect.addEventListener('change', () => {
+        const selectedMethod = paymentMethodSelect.value;
+
+        // Show the transaction container if "Card" or "Mobile Money" is selected
+        if (selectedMethod === 'Card' || selectedMethod === 'Mobile Money') {
+            transactionContainer.style.display = 'block';
+        } else {
+            transactionContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

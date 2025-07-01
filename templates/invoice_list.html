@@ -1,55 +1,85 @@
-{% extends "base.html" %}
-{%block title %}Invoices{% endblock %}
+{% extends 'base.html' %}
+{% block title %} Invoices {% endblock %}
+
 {% block content %}
 
-
-<div class="container flex justify-between items-end">
-
-  {% if messages %}
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      {% for message in messages %}
-      Swal.fire({
-          icon: '{{ message.tags }}',
-          title: '{{ message.tags|title }}',
-          text: '{{ message|escapejs }}',
-          timer: 3000,
-          timerProgressBar: true,
-          showConfirmButton: false
-      });
-      {% endfor %}
-  });
-  </script>
+<div class="inline-block min-w-full py-6 align-middle sm:px-6 lg:px-8">
+   <div class="container flex justify-between my-4 items-end">
+      <h1 class="text-lg">Invoices</h1>
+  <!-- Branch Filter Dropdown (For Admin Users) -->
+  {% if branches %}
+    <div class="mb-4">
+      <label for="branch" class="block text-sm font-medium text-gray-700">Filter by Branch:</label>
+      <select name="branch" id="branch" onchange="this.form.submit()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        <option value="">All Branches</option>
+        {% for branch in branches %}
+          <option value="{{ branch.id }}" {% if branch.id|slugify == selected_branch_id|slugify %}selected{% endif %}>
+            {{ branch.name }} - {{ branch.location }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
   {% endif %}
 
+   <!-- Create Quotation Button -->
+        <a href="{% url 'create_invoice_list' %}" class="btn btn-primary p-2 rounded bg-blue-800 text-white">Create Invoice</a>
 
-  <h1>Invoices</h1>
-  <a href="{% url 'create_invoice_list' %}" class="btn btn-primary p-2 rounded bg-blue-800 text-white">Create Invoice</a>
+    </div>
 
-</div>
-
-  <table class="table">
+  <!-- Invoice Table -->
+  <table class="min-w-full divide-y divide-gray-300">
     <thead>
       <tr>
-        <th>Invoice #</th>
-        <th>Patient</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Created</th>
+        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Invoice ID</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Patient Name</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Amount</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Created</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Created By</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Action</th>
       </tr>
     </thead>
-    <tbody>
-      {% for invoice in invoices %}
+    <tbody class="divide-y divide-gray-200 bg-white">
+      {% if invoices %}
+        {% for invoice in invoices %}
+          <tr>
+            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+              #{{ invoice.id }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ invoice.patient.first_name }} {{ invoice.patient.last_name }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              k{{ invoice.total_amount }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ invoice.status|title }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ invoice.created_at|date:"M d, Y" }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ invoice.created_by.username }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm flex flex-row gap-2">
+              <a href="{% url 'invoice_details' invoice.id %}" class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+                View
+              </a>
+              <a href="#" class="inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600">
+                Edit
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      {% else %}
         <tr>
-          <td><a href="{% url 'invoice_detail' invoice.id %}">{{ invoice.id }}</a></td>
-          <td>{{ invoice.patient.name }}</td>
-          <td>{{ invoice.total_amount }}</td>
-          <td>{{ invoice.get_status_display }}</td>
-          <td>{{ invoice.created_at }}</td>
+          <td colspan="7" class="whitespace-nowrap py-4 pl-4 pr-3 text-center text-sm text-gray-500 sm:pl-0">
+            No invoices found.
+          </td>
         </tr>
-      {% endfor %}
+      {% endif %}
     </tbody>
   </table>
-
+</div>
 
 {% endblock %}

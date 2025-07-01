@@ -3,6 +3,57 @@
 
 {% block content %}
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2 @11"></script>
+<script>
+function confirmDeleteQuotation(quotationId) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'You will not be able to recover this quotation!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send a POST request to delete the quotation
+            fetch(`/delete_quotation/${quotationId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}', // Include CSRF token
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    Swal.fire(
+                        'Deleted!',
+                        'The quotation has been deleted.',
+                        'success'
+                    ).then(() => {
+                        window.location.reload(); // Reload the page after deletion
+                    });
+                } else {
+                    Swal.fire(
+                        'Error!',
+                        'An error occurred while deleting the quotation.',
+                        'error'
+                    );
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire(
+                    'Error!',
+                    'An unexpected error occurred.',
+                    'error'
+                );
+            });
+        }
+    });
+}
+</script>
+
 <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
     <div class="container flex justify-between my-4 items-end">
         <h1 class="text-lg">Quotations</h1>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Transaction{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">
+      {% if object %}Edit{% else %}Add{% endif %} Transaction
+    </h1>
+    <a href="{% url 'item_detail' item.pk %}" 
+       class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+      Back to Item
+    </a>
+  </div>
+
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:p-6">
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-6">
+          <!-- Transaction Type -->
+          <div>
+            <label for="{{ form.transaction_type.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.transaction_type.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.transaction_type }}
+              {% if form.transaction_type.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.transaction_type.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Quantity -->
+          <div>
+            <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.quantity.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.quantity }}
+              {% if form.quantity.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.quantity.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Reference -->
+          <div>
+            <label for="{{ form.reference.id_for_label }}" class="block text-sm font-medium leading-6 text-gray-900">
+              {{ form.reference.label }}
+            </label>
+            <div class="mt-2">
+              {{ form.reference }}
+              {% if form.reference.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.reference.errors.as_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+          <a href="{% url 'item_detail' item.pk %}" 
+             class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            Cancel
+          </a>
+          <button type="submit" 
+                  class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+            Record Transaction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

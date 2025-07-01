@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %} Receipts {% endblock %}
+
+{% block content %}
+
+<div class="inline-block min-w-full py-6 align-middle sm:px-6 lg:px-8">
+   <div class="container flex justify-between my-4 items-end">
+      <h1 class="text-lg">Receipts</h1>
+      
+      <!-- Branch Filter Dropdown (For Admin Users) -->
+      {% if branches %}
+        <div class="mb-4">
+          <label for="branch" class="block text-sm font-medium text-gray-700">Filter by Branch:</label>
+          <select name="branch" id="branch" onchange="this.form.submit()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            <option value="">All Branches</option>
+            {% for branch in branches %}
+              <option value="{{ branch.id }}" {% if branch.id|slugify == selected_branch_id|slugify %}selected{% endif %}>
+                {{ branch.name }} - {{ branch.location }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+
+      
+    </div>
+
+  <!-- Receipt Table -->
+  <table class="min-w-full divide-y divide-gray-300">
+    <thead>
+      <tr>
+        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Receipt ID</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Patient Name</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Amount</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Issued At</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Created By</th>
+        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Action</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200 bg-white">
+      {% if receipts %}
+        {% for receipt in receipts %}
+          <tr>
+            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+              #{{ receipt.receipt_number }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ receipt.patient.first_name }} {{ receipt.patient.last_name }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              K{{ receipt.total_amount }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ receipt.status|title }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ receipt.issued_at|date:"M d, Y H:i" }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+              {{ receipt.payment.processed_by.username }}
+            </td>
+            <td class="whitespace-nowrap px-3 py-4 text-sm flex flex-row gap-2">
+              <a href="{% url 'receipt_detail' receipt.id %}" class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+                View
+              </a>
+              <a href="#" class="inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-600">
+                Edit
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="7" class="whitespace-nowrap py-4 pl-4 pr-3 text-center text-sm text-gray-500 sm:pl-0">
+            No receipts found.
+          </td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

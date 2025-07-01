@@ -1,86 +1,76 @@
 {% extends 'base.html' %}
-{% block title %} Quotations {% endblock %}
+{% block title %} Create Qouattion {% endblock %}
 
 {% block content %}
 
 <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-    <div class="container flex justify-between my-4 items-end">
-        <h1 class="text-lg">Quotations</h1>
-
-        <!-- Branch Filter Dropdown (Visible Only to Admins) -->
-        {% if user.user_type == 1 %}
-        <form method="get" class="mb-3">
-            <label for="branch" class="mr-2">Filter by Branch:</label>
-            <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded">
-                <option value="">All Branches</option>
-                {% for branch in branches %}
-                    <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
-                        {{ branch.name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </form>
-        {% endif %}
-    </div>
-
     <table class="min-w-full divide-y divide-gray-300">
-        <thead>
-            <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">First Name</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Last Name</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">NRC</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Branch</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Phone</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Action</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
-            {% for quotation in quotations %}
-            <tr>
-                <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
-                    <div class="flex items-center">
-                        <div class="ml-4">
-                            <div class="font-medium text-gray-900">{{ quotation.patient.first_name }}</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                    <div class="mt-1 text-gray-500">{{ quotation.patient.last_name }}</div>
-                </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                    <div class="mt-2 flex items-center text-sm text-gray-500">
-                        {{ quotation.patient.nrc }}
-                    </div>
-                </td>
+      <thead>
+        <tr>
+          <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">First Name</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Last Name</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">NRC</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Address</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Sex</th>
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Phone</th>
+          
+          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Action</th>
+         
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        {% for patients in patients %}
+        <tr>
+          <td class="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-0">
+            <div class="flex items-center">
+
+              <div class="ml-4">
+                <div class="font-medium text-gray-900">{{patients.first_name}}</div>
+              </div>
+            </div>
+          </td>
+
+          <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+              <div class="mt-1 text-gray-500"> {{ patients.last_name }} </div>
+          </td>
+          <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+              <div class="mt-2 flex items-center text-sm text-gray-500">
+                 
+                  {{ patients.nrc}}
+                </div>
                 <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
                     <p class="text-sm text-gray-500">
-                        <a href="#" class="hover:underline">{{ quotation.patient.email }}</a>
-                    </p>
+                        <a href="#" class="hover:underline"> {{ patients.email}}</a>
+                      </p>
                 </td>
+
                 <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                    <p class="text-sm text-gray-500">
-                        {{ quotation.patient.branch.name|default:"No Branch Assigned" }}
+                  <p class="text-sm text-gray-500">
+                     {{ patients.address }}
                     </p>
-                </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                    <span class="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-600/20">
-                        {{ quotation.patient.phone }}
-                    </span>
-                </td>
-                <td class="whitespace-nowrap px-3 py-5 text-sm flex flex-row gap-1">
-                    <a href="{% url 'quotation_detail' quotation.id %}" class="btn btn-primary p-2 rounded bg-blue-800 text-white">View</a>
-                    <a href="{% url 'download_quotation_pdf' quotation.id %}" class="btn btn-primary p-2 rounded bg-green-900 text-white">Download</a>
-                    <a href="{% url 'delete_quotation' quotation.id %}" class="btn btn-primary p-2 rounded bg-red-900 text-white">Delete</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center py-4 text-gray-500">No quotations found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+              </td>
+
+              <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+                  <p class="text-sm text-gray-500">
+                     {{ patients.gender }}
+                  </p>
+              </td>
+          </td>
+          <td class="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
+            <span class="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-600/20">{{ patients.phone}}</span>
+          </td>
+       
+          <td  class="whitespace-nowrap px-3 py-5 text-sm flex flex-row gap-1">
+            <a href="{% url 'patient_invoice' patients.id %}" class="btn btn-primary p-2 rounded bg-blue-800 text-white">Create Quotation</a>
+
+
+        </tr>
+        {% endfor %}
+        
+        <!-- More people... -->
+      </tbody>
     </table>
-</div>
+  </div>
 
 {% endblock %}

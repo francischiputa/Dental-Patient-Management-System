@@ -7,6 +7,7 @@ from patient.models import Patient
 from appointment.models import Appointment, Service
 import uuid
 from branches.models import Branch  # Import the Branch model
+from dentist.models import CustomUser as User
 
 class Invoice(models.Model):
     STATUS_CHOICES = [
@@ -22,6 +23,8 @@ class Invoice(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
+    notes = models.TextField(blank=True, null=True)
     branch = models.ForeignKey(
         Branch,
         blank=True,
@@ -101,6 +104,9 @@ class Payment(models.Model):
         related_name='payments'  # Allows querying payments by branch
     )
 
+    def get_existing_receipt(self):
+        return Receipt.objects.filter(payment__invoice=self.invoice).first()
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.update_invoice_status()
@@ -122,26 +128,121 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.patient} - {self.amount}"
 
+
 class Receipt(models.Model):
-    payment = models.OneToOneField(Payment, on_delete=models.CASCADE)
-    receipt_number = models.CharField(max_length=50, unique=True, editable=False)
-    issued_at = models.DateTimeField(auto_now_add=True)
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The invoice associated with this receipt."
+    )
+    payment = models.OneToOneField(
+        Payment,
+        on_delete=models.CASCADE,
+        help_text="The payment associated with this receipt."
+    )
+    items = models.ManyToManyField(
+        'inventory.InventoryItem',
+        through='ReceiptItem',
+        help_text="Items included in this receipt."
+    )
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        help_text="The patient associated with this receipt."
+    )
     branch = models.ForeignKey(
         Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='receipts',
+        help_text="The branch where this receipt was issued."
+    )
+    receipt_number = models.CharField(
+        max_length=50,
+        unique=True,
+        editable=False,
+        help_text="Unique identifier for the receipt."
+    )
+    issued_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the receipt was issued."
+    )
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The service associated with this receipt."
+    )
+    quantity = models.PositiveIntegerField(
+        default=1,
         blank=True,
         null=True,
-        on_delete=models.CASCADE,
-        related_name='receipts'  # Allows querying receipts by branch
+        help_text="Quantity of the service or item."
     )
-    notes = models.TextField(blank=True, null=True)
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Price of the item or service at the time of receipt creation."
+    )
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Total amount of the receipt."
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional notes for the receipt."
+    )
 
     def save(self, *args, **kwargs):
+        # Generate a unique receipt number if it doesn't exist
         if not self.receipt_number:
             self.receipt_number = f"RECEIPT-{uuid.uuid4().hex[:8]}"
+        
+        # Automatically calculate the total amount based on the payment
+        if self.payment:
+            self.total_amount = self.payment.amount
+        
+        # Ensure the branch is set correctly
+        if not self.branch:
+            # Set the branch from the payment's branch (if available)
+            if self.payment and self.payment.branch:
+                self.branch = self.payment.branch
+            # Alternatively, set the branch from the invoice's branch (if available)
+            elif self.invoice and self.invoice.branch:
+                self.branch = self.invoice.branch
+            # If neither payment nor invoice has a branch, raise an error
+            else:
+                raise ValueError("Cannot determine the branch for this receipt.")
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.payment} - {self.receipt_number}"
+        return f"Receipt: {self.receipt_number} - Branch: {self.branch.name if self.branch else 'Unknown'}"
+
+class ReceiptItem(models.Model):
+    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE)
+    item = models.ForeignKey('inventory.InventoryItem', on_delete=models.CASCADE)
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Price of the item at the time of receipt creation."
+    )
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.item.name}"
 
 class Quotation(models.Model):
     STATUS_CHOICES = [
@@ -172,11 +273,12 @@ class Quotation(models.Model):
         )['total'] or Decimal('0.00')
 
     def save(self, *args, **kwargs):
-        self.total_amount = self.calculate_total()
+        # Calculate the total amount only if the instance already exists
+        if self.pk:  # Check if the instance has been saved before
+            self.total_amount = self.calculate_total()
+        
+        # Save the instance (this will generate the primary key if it doesn't exist)
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.patient} - {self.total_amount}"
 
 class QuotationService(models.Model):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
