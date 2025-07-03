@@ -1,5 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
+
+<!-- Include SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2 @11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        
+        // Submit form via AJAX
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(new FormData(this))
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success notification
+                Swal.fire({
+                    icon: 'success',
+                    title: data.title,
+                    text: data.message,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = data.redirect_url;
+                });
+            } else {
+                // Show error notification
+                Swal.fire({
+                    icon: 'error',
+                    title: data.title,
+                    text: data.message,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            // Handle network errors
+            Swal.fire({
+                icon: 'error',
+                title: 'Network Error',
+                text: 'An unexpected error occurred. Please try again.',
+                confirmButtonText: 'OK'
+            });
+        });
+    });
+});
+</script>
+
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <h1 class="text-2xl font-bold text-gray-900">Inventory Items</h1>

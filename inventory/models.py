@@ -41,6 +41,7 @@ class InventoryItem(models.Model):
     reorder_level = models.PositiveIntegerField(default=10)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     notes = models.TextField(blank=True, null=True)
+    available_stock = models.IntegerField(default=0) 
     supplier = models.ForeignKey(
         Supplier, 
         on_delete=models.SET_NULL, 
@@ -62,6 +63,7 @@ class InventoryItem(models.Model):
             self.reorder_level = min(self.quantity, 10)  # Default fallback
         super().save(*args, **kwargs)
 
+
 class InventoryTransaction(models.Model):
     TRANSACTION_TYPES = (
         ('IN', 'Stock In'),
@@ -75,10 +77,11 @@ class InventoryTransaction(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     reference = models.CharField(max_length=200, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    transaction_type = models.CharField(max_length=10, choices=[('IN', 'In'), ('OUT', 'Out')])
     notes = models.TextField(blank=True, null=True)
-    fields = ['item', 'transaction_type', 'quantity', 'timestamp']  # Include only valid fields
 
-    def clean(self):
-        if self.transaction_type == 'OUT' and self.quantity > self.item.quantity:
-            raise ValidationError("Cannot remove more items than available in stock")
+    # def clean(self):
+    #     if not self.item_id:
+    #         raise ValidationError("An item must be selected for the transaction.")
+        
+    #     if self.transaction_type == 'OUT' and self.quantity > self.item.stock:
+    #         raise ValidationError("Cannot remove more items than available in stock.")

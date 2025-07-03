@@ -40,10 +40,12 @@ from django.db.models import Sum
 from django.db.models import F
 import calendar
 from inventory.models import InventoryItem, InventoryTransaction, Supplier, ItemCategory
-from payments.models import Receipt # Import the Receipt model
+from payments.models import Receipt, ReceiptItem  # Import the Receipt and ReceiptItem models
 from inventory.forms import TransactionForm, ItemForm, SupplierForm, CategoryForm
 from django.template.loader import render_to_string
 from branches.models import Branch 
+from django.urls import reverse
+import uuid
 
 
 
@@ -801,7 +803,7 @@ def turn_to_invoice(request, quotation_id):
     messages.success(request, "The quotation has been successfully converted into an invoice.")
 
     # Redirect to the invoice detail page
-    return redirect('invoice_list', invoice_id=invoice.id)
+    return redirect('invoice_list')
 
 
 def patient_quotation(request, patient_id):
@@ -1503,64 +1505,8 @@ def item_transactions(request, pk):
     })
 
 
-@login_required
-def transaction_create(request, pk):
-    item = get_object_or_404(InventoryItem, pk=pk)
-    
-    if request.method == 'POST':
-        form = TransactionForm(request.POST, item=item)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.item = item
-            transaction.user = request.user
-            
-            try:
-                # Handle transaction logic
-                if transaction.transaction_type == 'OUT' and transaction.quantity > item.quantity:
-                    messages.error(request, "Cannot remove more items than available in stock")
-                    return render(request, 'transaction_form.html', {
-                        'form': form,
-                        'item': item,
-                        'title': 'Add Transaction'
-                    })
-                
-                transaction.save()
-                
-                # Update item quantity
-                if transaction.transaction_type == 'IN':
-                    item.quantity += transaction.quantity
-                elif transaction.transaction_type == 'OUT':
-                    item.quantity -= transaction.quantity
-                    
-                item.save(update_fields=['quantity', 'last_updated'])
-                
-                messages.success(
-                    request, 
-                    f"{transaction.get_transaction_type_display()} of {transaction.quantity} units recorded"
-                )
-                
-                return redirect('inventory:item_detail', pk=item.pk)
-                
-            except Exception as e:
-                messages.error(request, f"Error recording transaction: {str(e)}")
-                return render(request, 'transaction_form.html', {
-                    'form': form,
-                    'item': item,
-                    'title': 'Add Transaction'
-                })
-    else:
-        form = TransactionForm(item=item)
-    
-    return render(request, 'transaction_form.html', {
-        'form': form,
-        'item': item,
-        'title': 'Add Transaction'
-    })
 
-    return render(request, 'supplier_form.html', {
-        'form': form,
-        'title': 'Add New Supplier'
-    })
+
 
 
 @login_required
@@ -1679,57 +1625,88 @@ def supplier_delete(request, pk):
         'type': 'supplier'
     })
 
-
+@login_required
 def turn_invoice_to_receipt(request, invoice_id):
-    """
-    Converts an existing Invoice into a Receipt.
-    Copies all details from the Invoice to the Receipt without modifications.
-    """
-    # Fetch the Invoice and related Payment records
-    invoice = get_object_or_404(Invoice, id=invoice_id)
-    payments = Payment.objects.filter(invoice=invoice)
-
+    print(f"Processing invoice ID: {invoice_id}")  # Debug
+    
     try:
-        with transaction.atomic():
-            # Create the Receipt object
-            receipt = Receipt.objects.create(
-                invoice=invoice,
-                payment=payments.first(),  # Link the first payment (or handle multiple payments as needed)
-                patient=invoice.patient,
-                branch=invoice.branch,  # Copy the branch from the Invoice
-                total_amount=invoice.total_amount,
-                notes=invoice.notes,  # Copy notes from the Invoice
-            )
-
-            # Generate a unique receipt number
-            receipt.receipt_number = f"RECEIPT-{uuid.uuid4().hex[:8]}"
-            receipt.save()
-
-            # Copy InvoiceService details to ReceiptItem
-            for invoice_service in invoice.invoiceservice_set.all():
-                ReceiptItem.objects.create(
+        # Fetch the invoice
+        invoice = get_object_or_404(Invoice, id=invoice_id)
+        print(f"Invoice Patient: {invoice.patient}")  # Debug
+        print(f"Invoice Branch: {invoice.branch}")  # Debug
+        print(f"Invoice Total Amount: {invoice.total_amount}")  # Debug
+        
+        # Check if a receipt already exists for this invoice
+        existing_receipt = Receipt.objects.filter(invoice=invoice).first()
+        if existing_receipt:
+            print("Receipt already exists - redirecting")  # Debug
+            messages.warning(request, "A receipt for this invoice already exists.")
+            return redirect('invoice_list')
+        
+        # Determine the branch
+        receipt_branch = invoice.branch
+        if not receipt_branch:
+            print("Invoice has no branch - trying to get default branch")  # Debug
+            # Try to get a default branch or the first available branch
+            try:
+                # Branch model is already imported at the top
+                receipt_branch = Branch.objects.first()
+                print(f"Using default branch: {receipt_branch}")  # Debug
+            except:
+                print("No branches available")  # Debug
+                messages.error(request, "Cannot determine branch for this receipt. Please ensure the invoice has a branch assigned.")
+                return redirect('invoice_list')
+        
+        print(f"About to create receipt with branch: {receipt_branch}")  # Debug
+        
+        # Create the receipt step by step for better debugging
+        receipt_data = {
+            'invoice': invoice,
+            'patient': invoice.patient,
+            'total_amount': invoice.total_amount,
+            'branch': receipt_branch,
+            'notes': "Generated from invoice conversion"
+        }
+        
+        print(f"Receipt data: {receipt_data}")  # Debug
+        
+        receipt = Receipt(**receipt_data)
+        print("Receipt object created, about to save...")  # Debug
+        
+        receipt.save()
+        print(f"Receipt saved successfully: {receipt}")  # Debug
+        
+        # Copy invoice services to receipt items (if applicable)
+        invoice_services = invoice.invoiceservice_set.all()
+        print(f"Found {invoice_services.count()} invoice services")  # Debug
+        
+        for invoice_service in invoice_services:
+            print(f"Processing service: {invoice_service}")  # Debug
+            try:
+                receipt_item = ReceiptItem.objects.create(
                     receipt=receipt,
-                    item=invoice_service.service,  # Assuming service is treated as an item
+                    item=invoice_service.service.inventory_item,
                     price=invoice_service.price_at_time,
                     quantity=invoice_service.quantity
                 )
-
-            # Optionally mark the Invoice as paid if fully paid
-            if invoice.status == 'paid':
-                messages.success(request, "The invoice has been successfully converted into a receipt.")
-            else:
-                messages.warning(request, "The invoice was partially converted into a receipt.")
-
+                print(f"Created receipt item: {receipt_item}")  # Debug
+            except Exception as item_error:
+                print(f"Error creating receipt item: {str(item_error)}")  # Debug
+                # Continue with other items even if one fails
+        
+        messages.success(request, f"Receipt {receipt.receipt_number} created successfully!")
+        print(f"Redirecting to receipt detail for receipt {receipt.pk}")  # Debug
+        
+        # Make sure this URL name exists in your urls.py
+        return redirect('receipt_list')
+        
     except Exception as e:
-        # Handle any unexpected errors during the process
-        messages.error(request, f"Failed to create the receipt: {str(e)}")
-        return redirect('invoice_list')  # Redirect to the list of invoices
-
-    # Add a success message
-    messages.success(request, "The invoice has been successfully converted into a receipt.")
-
-    # Redirect to the receipt detail page
-    return redirect('receipt_detail', receipt_id=receipt.id)
+        import traceback
+        print(f"Full error traceback:")  # Debug
+        print(traceback.format_exc())  # This will show the full error stack
+        messages.error(request, f"Failed to convert invoice to receipt: {str(e)}")
+        return redirect('invoice_list')
+    
 
 
 
@@ -1899,5 +1876,164 @@ def download_receipt_pdf(request, receipt_id):
     HTML(string=html_content).write_pdf(pdf_response)
 
     return pdf_response\
-    
 
+@login_required
+def transaction_create(request, pk):
+    """
+    View to create a new inventory transaction for a specific item.
+    """
+    # Fetch the item using the provided pk
+    item = get_object_or_404(InventoryItem, pk=pk)
+
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.item = item  # Set the item for the transaction
+            transaction.user = request.user  # Set the user who performed the transaction
+            transaction.save()
+            messages.success(request, "Transaction recorded successfully!")
+            return redirect('item_detail', pk=item.pk)  # Redirect to the item detail page
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = TransactionForm()
+
+    return render(request, 'transaction_form.html', {'form': form, 'item': item})
+
+
+
+# View with validation logic
+# If you prefer to keep AJAX and redirect with JavaScript
+@login_required
+def record_inventory_transaction(request, item_id):
+    item = get_object_or_404(InventoryItem, id=item_id)
+    
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            try:
+                # Extract cleaned data
+                transaction_type = form.cleaned_data['transaction_type']
+                quantity = form.cleaned_data['quantity']
+                
+                # Check stock availability for 'OUT' transactions
+                if transaction_type == 'OUT' and quantity > item.quantity:
+                    return JsonResponse({
+                        'status': 'error',
+                        'title': 'Insufficient Stock',
+                        'message': f'Only {item.quantity} items available. Cannot remove {quantity} items.',
+                        'redirect_url': reverse('item_list')  # Replace with your actual URL name
+                    }, status=400)
+                
+                # Create and save the transaction
+                transaction = form.save(commit=False)
+                transaction.item = item
+                transaction.user = request.user
+                transaction.save()
+                
+                # Update inventory stock
+                if transaction_type == 'OUT':
+                    item.quantity -= quantity
+                else:
+                    item.quantity += quantity
+                item.save()
+                
+                # Success response for SweetAlert
+                return JsonResponse({
+                    'status': 'success',
+                    'title': 'Success!',
+                    'message': f'Transaction recorded successfully! Current stock: {item.quantity}',
+                    'redirect_url': reverse('item_list')  # Replace with your actual URL name
+                })
+            
+            except Exception as e:
+                # Error response for unexpected exceptions
+                return JsonResponse({
+                    'status': 'error',
+                    'title': 'Transaction Failed',
+                    'message': f'An unexpected error occurred: {str(e)}',
+                    'redirect_url': reverse('item_list')
+                }, status=500)
+        else:
+            # Aggregate form errors for SweetAlert
+            error_messages = []
+            for field, errors in form.errors.items():
+                for error in errors:
+                    error_messages.append(f"{field}: {error}")
+            return JsonResponse({
+                'status': 'error',
+                'title': 'Invalid Data',
+                'message': f'Please fix the following errors: {", ".join(error_messages)}',
+                'redirect_url': reverse('item_list')  # Redirect to the item list or another relevant page
+            }, status=400)
+    else:
+        form = TransactionForm()
+    
+    return render(request, 'transaction_form.html', {'form': form, 'item': item})
+
+
+@login_required
+def receipt_detail(request, pk):
+    receipt = get_object_or_404(Receipt, pk=pk)
+    invoice = receipt.invoice  # Get the linked invoice
+
+    # Use the invoice's pre-calculated values
+    subtotal = invoice.total_amount or Decimal('0.00')
+    tax = Decimal('0.00')
+    grand_total = invoice.total_amount or Decimal('0.00')
+
+    # Optionally get the invoice items for display
+    items_with_totals = []
+    for item in invoice.invoiceservice_set.all():
+        price = item.price_at_time or Decimal('0.00')
+        total_price = item.quantity * price
+        items_with_totals.append({
+            'item': item.service if item.service else None,
+            'quantity': item.quantity,
+            'price': price,
+            'total_price': total_price
+        })
+
+    return render(request, 'receipt_detail.html', {
+        'receipt': receipt,
+        'items': items_with_totals,
+        'subtotal': subtotal,
+        'tax': tax,
+        'grand_total': grand_total
+    })
+
+
+
+def generate_receipt_pdf(request, pk):
+    receipt = get_object_or_404(Receipt, pk=pk)
+    invoice = receipt.invoice  # Get linked invoice
+
+    # Use the invoice for consistent display
+    items = []
+    for item in invoice.invoiceservice_set.all():
+        price = item.price_at_time or Decimal('0.00')
+        total_price = item.quantity * price
+        items.append({
+            'item': item.service if item.service else None,
+            'quantity': item.quantity,
+            'price': price,
+            'total_price': total_price
+        })
+
+    subtotal = invoice.total_amount or Decimal('0.00')
+    tax = Decimal('0.00')  # Or update this if your Invoice includes tax
+    grand_total = subtotal + tax
+
+    html_string = render_to_string('receipts_pdf.html', {
+        'receipt': receipt,
+        'items': items,
+        'subtotal': subtotal,
+        'tax': tax,
+        'grand_total': grand_total
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename=receipt_{receipt.receipt_number}.pdf'
+    HTML(string=html_string).write_pdf(response)
+    return response

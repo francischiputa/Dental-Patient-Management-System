@@ -81,7 +81,6 @@ urlpatterns = [
     path('items/<int:pk>/update/', views.item_update, name='item_update'),
     path('items/<int:pk>/delete/', views.item_delete, name='item_delete'),
     path('items/<int:pk>/transactions/', views.item_transactions, name='item_transactions'),
-    path('items/<int:pk>/transactions/new/', views.transaction_create, name='transaction_create'),
     path('categories/', views.category_list, name='category_list'),
     path('suppliers/', views.supplier_list, name='supplier_list'),
     # Categories
@@ -96,12 +95,15 @@ urlpatterns = [
     path('suppliers/<int:pk>/delete/', views.supplier_delete, name='supplier_delete'),
     path('categories/new/', views.category_create, name='category_create'),
     path('items/<int:pk>/transactions/new/', views.transaction_create, name='transaction_create'),
+    #Inventory Transactions
+    path('inventory/<int:item_id>/transaction/new/', views.record_inventory_transaction, name='record_inventory_transaction'),
     # Receipts
     path('receipts/', views.receipt_list, name='receipt_list'),
     path('receipts/<int:pk>/', views.receipt_detail, name='receipt_detail'),
     path('turn_invoice_to_receipt/<int:invoice_id>/', views.turn_invoice_to_receipt, name='turn_invoice_to_receipt'),
     path('receipts/<int:receipt_id>/', views.receipt_detail_view, name='receipt_detail'),
     path('receipts/<int:receipt_id>/download/', views.download_receipt_pdf, name='download_receipt_pdf'),
+    path('receipts/<int:pk>/pdf/', views.generate_receipt_pdf, name='receipt_pdf'),
     # path('receipts/<int:pk>/pdf/', views.generate_receipt_pdf, name='receipt_pdf'),
 
     path('calendar/', views.calendar_view, name='calendar'),
