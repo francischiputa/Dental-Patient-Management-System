@@ -32,6 +32,15 @@ class Service(models.Model):
     duration = models.DurationField(blank=True, null=True)
     branch = models.ForeignKey(Branch, blank=True, null=True, on_delete=models.CASCADE)
 
+    def get_price_for_branch(self, branch):
+        """
+        Returns the price for the given branch, or fallback to a base price if available.
+        """
+        service_price = self.serviceprice_set.filter(branch=branch).first()
+        if service_price:
+            return service_price.price
+        return self.price  # This is optional; you may remove `price` from Service entirely
+
     def save(self, *args, **kwargs):
         if self.price is None:
             raise ValueError("Price cannot be None.")
