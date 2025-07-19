@@ -57,22 +57,22 @@ function confirmDeleteQuotation(quotationId) {
 <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
     <div class="container flex justify-between my-4 items-end">
         <h1 class="text-lg">Quotations</h1>
-
-        <!-- Branch Filter Dropdown (Visible Only to Admins) -->
         {% if user.user_type == 1 %}
         <form method="get" class="mb-3">
             <label for="branch" class="mr-2">Filter by Branch:</label>
             <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded">
                 <option value="">All Branches</option>
                 {% for branch in branches %}
-                    <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
-                        {{ branch.name }}
-                    </option>
+                    <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
                 {% endfor %}
             </select>
         </form>
         {% endif %}
-
+        {% if user.branch and user.user_type != 1 %}
+        <div class="mb-4 text-gray-700">
+            <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+        </div>
+        {% endif %}
         <!-- Create Quotation Button -->
         <a href="{% url 'create_quotation_list' %}" class="btn btn-primary p-2 rounded bg-blue-800 text-white">Create Quotation</a>
     </div>

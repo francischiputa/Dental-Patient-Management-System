@@ -64,7 +64,22 @@
           </li>
         </ol>
       </nav>
-
+      {% if user.user_type == 1 %}
+      <form method="get" class="mb-3 mt-4">
+          <label for="branch" class="mr-2 text-gray-700">Filter by Branch:</label>
+          <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+              <option value="">All Branches</option>
+              {% for branch in branches %}
+                  <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
+              {% endfor %}
+          </select>
+      </form>
+      {% endif %}
+      {% if user.branch and user.user_type != 1 %}
+      <div class="mb-4 text-gray-700">
+          <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+      </div>
+      {% endif %}
     </div>
     <div class="mt-5 flex lg:ml-4 lg:mt-0">
   <!-- Dropdown -->

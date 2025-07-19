@@ -11,10 +11,18 @@
     <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- AOS Animate On Scroll -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <style>
+      .aos-init[data-aos][data-aos][data-aos-delay] {
+        transition-delay: var(--aos-delay, 0ms) !important;
+      }
+    </style>
   </head>
   <body>
 
-        {% comment %} <!-- Display Django Messages -->
+        <!-- Display Django Messages -->
     {% if messages %}
     <div class="messages">
         {% for message in messages %}
@@ -42,7 +50,7 @@
         });
     });
 </script>
-{% endif %} {% endcomment %}
+{% endif %}
 
 <nav class="bg-white dark:bg-gray-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600">
     <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -88,7 +96,7 @@
   </nav>
 
   <!--Hero Section -->
-  <section class="bg-center bg-no-repeat bg-cover bg-[url('{% static 'img/smile.jpg' %}')] bg-gray-50 bg-blend-multiply h-screen w-full">
+  <section class="bg-center bg-no-repeat bg-cover bg-[url('{% static 'img/smile.jpg' %}')] bg-gray-50 bg-blend-multiply h-screen w-full" data-aos="fade-in" data-aos-duration="1200">
 
         <div id="hero-section" class="bg-center bg-no-repeat relative isolate px-6 pt-14 lg:px-8">
           <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
@@ -113,7 +121,7 @@
 
 
 <!--Appointment btn -->
-<div class="mt-10 flex items-center justify-center py-3 gap-x-6">
+<div class="mt-10 flex items-center justify-center py-3 gap-x-6" data-aos="zoom-in" data-aos-delay="200">
   <a href="#" class="rounded-md bg-sky-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Book an Appointment</a>
   
 </div>
@@ -122,13 +130,13 @@
 
 <!-- Services section -->
 
-<div class="flex item-center justify-center py-3 m-2 mt-5">
+<div class="flex item-center justify-center py-3 m-2 mt-5" data-aos="fade-up" data-aos-delay="300">
   <h2 class="text-2xl text-sky-900 font-semibold p-3 px-4 item-center justify-center">Our Services</h2>
 </div>
 
 <div class="flex flex-wrap items-center justify-center gap-3 p-3 my-4 m-3 gap-x-6 sm:py-32">
 
-  <div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto">
+  <div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="fade-up" data-aos-delay="100">
     <div class="flex items-center justify-center">
       <img src="{% static 'img/dental-floss.svg' %}" alt="teeth" class="w-28 h-32">
   
@@ -144,7 +152,7 @@
 
   </div>
 
- <div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto">
+ <div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="fade-up" data-aos-delay="200">
   <div class="flex items-center justify-center">
     <img src="{% static 'img/molar-svgrepo.svg' %}" alt="teeth" class="w-28 h-32">
 
@@ -161,7 +169,7 @@
   </div>
 
 
-<div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto">
+<div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="fade-up" data-aos-delay="300">
    <div class="flex items-center justify-center">
     <img src="{% static 'img/cottons-pliers.svg' %}" alt="teeth" class="w-28 h-32">
 
@@ -179,7 +187,7 @@
 
 
 
-<div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto">
+<div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="fade-up" data-aos-delay="400">
   <div class="flex items-center justify-center">
    <img src="{% static 'img/band-aid-svgrepo.svg' %}" alt="teeth" class="w-28 h-32">
 
@@ -196,7 +204,7 @@
  </div>
 
 
-  <div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto">
+  <div class="ring ring-1 ring-sky-400 hover:ring-sky-900 hover:bg-gray-800 hover:text-white rounded-lg p-4 px-3 mx-3 item-center justify-center w-full sm:w-auto transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="fade-up" data-aos-delay="500">
     <div class="flex items-center justify-center">
       <img src="{% static 'img/dentist-svgrepo-com.svg' %}" alt="teeth" class="w-28 h-32">
   
@@ -217,7 +225,7 @@
 </div>
 
 <!--About us-->
-<section id="about-us" class="bg-white dark:bg-gray-900 py-24 sm:py-32">
+<section id="about-us" class="bg-white dark:bg-gray-900 py-24 sm:py-32" data-aos="fade-up" data-aos-delay="200">
   <div class="gap-16 items-center py-8 px-4 mx-auto max-w-screen-xl lg:grid lg:grid-cols-2 lg:py-16 lg:px-6">
       <div class="font-light text-gray-500 sm:text-lg dark:text-gray-400">
           <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">Superior Dental Solutions Limited</h2>
@@ -237,7 +245,7 @@
 
 <!-- Testmonials -->
 
-  <div class="bg-white py-24 sm:py-32">
+  <div class="bg-white py-24 sm:py-32" data-aos="fade-up" data-aos-delay="200">
     <div class="mx-auto max-w-7xl px-6 lg:px-8">
       <div class="mx-auto max-w-2xl item-start">
         
@@ -246,7 +254,7 @@
       </div>
       <div class="mx-auto mt-16 flow-root max-w-2xl gap-2 sm:mt-20 lg:mx-0 lg:max-w-none">
         <div class="-mt-8 sm:-mx-4 sm:columns-2 gap-4 sm:text-[0] lg:columns-3">
-          <div class="pt-8 sm:inline-block sm:w-full sm:px-4 ring ring-1 ring-sky-400 rounded-lg">
+          <div class="pt-8 sm:inline-block sm:w-full sm:px-4 ring ring-1 ring-sky-400 rounded-lg transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="zoom-in" data-aos-delay="100">
             <figure class="rounded-2xl bg-gray-50 p-8 text-sm/6">
               <blockquote class="text-gray-900">
                 <p>“I recently had my braces fitted at superior dental solutions, and i cloudn't be happier with the experience.
@@ -264,7 +272,7 @@
   
           <!-- More testimonials... -->
 
-          <div class="pt-8 sm:inline-block sm:w-full sm:px-4 ring ring-1 ring-sky-400 rounded-lg">
+          <div class="pt-8 sm:inline-block sm:w-full sm:px-4 ring ring-1 ring-sky-400 rounded-lg transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="zoom-in" data-aos-delay="200">
             <figure class="rounded-2xl bg-gray-50 p-8 text-sm/6">
               <blockquote class="text-gray-900">
                 <p>“I had been struggling with dental issues for years until I found Superior Dental Solutions. Their advanced treatments and personalized care made all the difference. My confidence is back, and I can finally smile without hesitation!”</p>
@@ -282,7 +290,7 @@
 
 
 
-          <div class="pt-8 sm:inline-block sm:w-full sm:px-4 ring ring-1 ring-sky-400 rounded-lg">
+          <div class="pt-8 sm:inline-block sm:w-full sm:px-4 ring ring-1 ring-sky-400 rounded-lg transition-transform duration-300 transform hover:scale-105 shadow-lg" data-aos="zoom-in" data-aos-delay="300">
             <figure class="rounded-2xl bg-gray-50 p-8 text-sm/6">
               <blockquote class="text-gray-900">
                 <p>“Superior Dental Solutions transformed my smile! The team was professional, kind, and made me feel comfortable throughout the entire process. My teeth have never looked better, and I couldn’t be happier with the results.”</p>
@@ -303,7 +311,7 @@
   
   <!--Footer-->
 
-  <footer class="bg-gray-900">
+  <footer class="bg-gray-900" data-aos="fade-in" data-aos-delay="200">
     <div class="mx-auto max-w-7xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
       <div class="xl:grid xl:grid-cols-3 xl:gap-8">
         <div class="space-y-8">
@@ -418,7 +426,7 @@
     </div>
   </footer>
 <!-- Popup Appointment Form -->
-<div id="appointment-form" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 hidden">
+<div id="appointment-form" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 hidden transition-opacity duration-500" style="opacity:0;">
   <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-semibold text-gray-800">Book an Appointment</h2>
@@ -490,23 +498,38 @@
 </div>
 
 <!-- JavaScript to handle popup -->
- {% comment %} <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>  {% endcomment %}
 <script>
+  // AOS init
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.AOS) {
+      AOS.init({
+        once: true,
+        duration: 800,
+        easing: 'ease-in-out',
+      });
+    }
+  });
   // Close the popup when the close button is clicked
   document.getElementById('close-button').addEventListener('click', function() {
-    document.getElementById('appointment-form').classList.add('hidden');
+    const form = document.getElementById('appointment-form');
+    form.style.opacity = 0;
+    setTimeout(() => { form.classList.add('hidden'); }, 500);
   });
 
   // Close the popup when the cancel button is clicked
   document.getElementById('cancel-button').addEventListener('click', function() {
-    document.getElementById('appointment-form').classList.add('hidden');
+    const form = document.getElementById('appointment-form');
+    form.style.opacity = 0;
+    setTimeout(() => { form.classList.add('hidden'); }, 500);
   });
 
   // Show the appointment form when the "Book an Appointment" button is clicked
   document.querySelectorAll('.bg-sky-900').forEach(button => {
     button.addEventListener('click', function(event) {
       event.preventDefault();
-      document.getElementById('appointment-form').classList.remove('hidden');
+      const form = document.getElementById('appointment-form');
+      form.classList.remove('hidden');
+      setTimeout(() => { form.style.opacity = 1; }, 10);
     });
   });
 

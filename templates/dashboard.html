@@ -2,193 +2,189 @@
 {% block title %} Dashboard {% endblock %}
 {% load static %}
 {% block content %}
-<!--================Top cards ===============-->
-<div class="p-5 m-3 justify-start font-normal text-xl text-black">
-    {% if user.is_authenticated %}
-    <h1> Welcome, <span class="text-gray-500 font-bold">{{ user.username }}</span> </h1>
-    {% else %}
-    <h1> Welcome, <span class="text-gray-500 font-bold">Guest</span> </h1>
-    {% endif %}
-</div>
-
-<!-- Branch Filter Dropdown (Visible Only to Admins) -->
-{% if user.user_type == 1 %}
-<div class="flex justify-between items-center mb-4">
-    <form method="get" class="mb-3">
-        <label for="branch" class="mr-2 text-gray-700">Filter by Branch:</label>
-        <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
-            <option value="">All Branches</option>
-            {% for branch in branches %}
-                <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
-                    {{ branch.name }}
-                </option>
-            {% endfor %}
-        </select>
-    </form>
-</div>
-{% endif %}
-
-<!-- Display User's Branch (Non-Admin Users) -->
-{% if user.branch and user.user_type != 1 %}
-<div class="mb-4 text-gray-700">
-    <p><strong>Branch:</strong> {{ user.branch.name }}</p>
-</div>
-{% endif %}
-
-<div class="flex flex-row bg-white item-center justify-center mx-auto p-5">
-    <!---=======First card====-->
-    <div class="pointer-event-none">
-        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-blue-500 shadow-lg ring-1 px-4 mx-4 ring-blue-200 ring-inset">
-            <div class="m-4 p-4 mt-6 pt-6 pr-5 rounded-full h-20 w-20 bg-white justify-center item-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8 m-1">
+<div class="p-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800">
+                {% if greeting %}{{ greeting }},{% else %}Welcome,{% endif %}
+                {{ user.get_full_name|default:user.username|default:'Guest' }}
+            </h2>
+            <p class="text-gray-500 text-sm">Let's make today efficient and patient-friendly.</p>
+            {% if user.branch %}
+            <p class="text-gray-600 text-sm mt-1">Branch: <span class="font-bold">{{ user.branch.name }}</span></p>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-2 mt-4 md:mt-0">
+            <form method="get" class="hidden md:block">
+                {% if user.user_type == 1 %}
+                <label for="branch" class="mr-2 text-gray-700">Branch:</label>
+                <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </form>
+            <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Export</button>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+            <div>
+                <div class="text-gray-500 text-sm">Overall Visitor</div>
+                <div class="text-2xl font-bold">{{ total_appointments }}</div>
+                <div class="text-green-500 text-xs mt-1">+17.54% <span class="text-gray-400">That last Month</span></div>
+            </div>
+            <div class="bg-blue-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
                 </svg>
             </div>
-            <div class="flex flex-col m-4 p-4">
-                <div class="font-bold text-2xl text-white">{{ total_appointments }}</div>
-                <div class="text-xl text-white">Appointments</div>
-            </div>
         </div>
-    </div>
-
-    <!---=======Second card====-->
-    <div class="pointer-event-none">
-        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-violet-600 shadow-lg ring-1 px-4 mx-4 ring-violet-600 ring-inset">
-            <div class="m-4 p-4 mt-6 pt-6 rounded-full h-20 w-20 bg-white justify-center item-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
+        <div class="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+            <div>
+                <div class="text-gray-500 text-sm">Total Patient</div>
+                <div class="text-2xl font-bold">{{ total_patients }}</div>
+                <div class="text-green-500 text-xs mt-1">+17.54% <span class="text-gray-400">That last Month</span></div>
+            </div>
+            <div class="bg-green-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-green-600">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
                 </svg>
             </div>
-            <div class="flex flex-col m-4 p-4">
-                <div class="font-bold text-2xl text-white">{{ total_patients }}</div>
-                <div class="text-xl text-white">Patients</div>
-            </div>
         </div>
-    </div>
-
-    <!---=======Third card====-->
-    <div class="pointer-event-none">
-        <div class="flex flex-row max-w-xl1 justify-between rounded-md gap-5 bg-fuchsia-500 shadow-lg ring-1 px-4 mx-4 ring-fuchsia-500 ring-inset">
-            <div class="m-4 p-4 mt-6 pt-6 rounded-full h-20 w-20 bg-white justify-center item-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8">
+        <div class="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+            <div>
+                <div class="text-gray-500 text-sm">Overall Room</div>
+                <div class="text-2xl font-bold">{{ total_quotations }}</div>
+                <div class="text-green-500 text-xs mt-1">+17.54% <span class="text-gray-400">That last Month</span></div>
+            </div>
+            <div class="bg-pink-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-pink-600">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 0 0 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 0 1-1.44-4.282m3.102.069a18.03 18.03 0 0 1-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 0 1 8.835 2.535M10.34 6.66a23.847 23.847 0 0 0 8.835-2.535m0 0A23.74 23.74 0 0 0 18.795 3m.38 1.125a23.91 23.91 0 0 1 1.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 0 0 1.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 0 1 0 3.46" />
                 </svg>
             </div>
-            <div class="flex flex-col m-4 p-4">
-                <div class="font-bold text-2xl text-white">{{ total_quotations }}</div>
-                <div class="text-xl text-white">Quotations</div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Total Patients</h3>
+                <select class="border rounded p-1 text-gray-700">
+                    <option>Week</option>
+                    <option>Month</option>
+                </select>
             </div>
+            <div class="text-3xl font-bold text-blue-600 mb-2">+4,924 <span class="text-base font-normal text-gray-500">New Patients</span></div>
+            <canvas id="patientsChart" class="w-full h-40"></canvas>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Overall Room</h3>
+                <select class="border rounded p-1 text-gray-700">
+                    <option>Week</option>
+                    <option>Month</option>
+                </select>
+            </div>
+            <canvas id="roomChart" class="w-full h-40"></canvas>
         </div>
     </div>
-</div>
-
-<div class="flex flex-row bg-white item-center justify-center gap-3 mx-auto p-5">
-    <div class="p-6 mb-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-200 dark:border-gray-200">
-        <h3 class="m-2 p-2">Scheduled Appointments</h3>
-        <div class="justify-center item-center p-2 ml-3">
-            <time id="today" class="text-gray-900 dark:text-gray-600">January 13th, 2022</time>
-        </div>
-        <ol class="mx-5 divide-y divider-gray-200 dark:divide-gray-700">
-            {% for appointment in scheduled_appointments %}
-            <li>
-                <a href="{% url 'update_patient_request' appointment.patient.id %}" class="items-center bg-blue-500 rounded-md block p-3 my-3 sm:flex hover:bg-blue-100 dark:hover:bg-blue-900">
-                    <div class="text-gray-600 dark:text-white">
-                        <div class="flex flex-row justify-between gap-5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-8 mx-2 h-20 w-20">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                            </svg>
-                            <div class="text-base font-normal mx-3">
-                                <span class="font-bold text-gray-900 dark:text-white">{{ appointment.patient }}</span> Booked Appointment for 
-                                <span class="font-medium text-gray-900 dark:text-white">{{ appointment.service }}</span>
-                                <br />
-                                <hr class="my-2" />
-                                Doctor: <span class="font-medium text-gray-900 dark:text-white">{{ appointment.dentist.user.username }}</span>
-                            </div>
-                        </div>
-                        <div class="text-sm font-normal mt-3 bg-slate-800 dark:bg-gray-700">
-                            <a href="{% url 'complete_appointment' appointment.id %}" class="text-blue-600 bg-slate-800 hover:underline dark:text-blue-500">
-                                <h1 class="m-4 p-4 font-bold text-white">Complete Appointment</h1>
-                            </a>
-                        </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Scheduled Appointments</h3>
+            <ol class="divide-y divide-gray-200">
+                {% for appointment in scheduled_appointments %}
+                <li class="py-4 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-gray-900">{{ appointment.patient }}</div>
+                        <div class="text-gray-500 text-sm">Booked Appointment for <span class="font-medium">{{ appointment.service }}</span></div>
+                        <div class="text-gray-400 text-xs">Doctor: {{ appointment.dentist.user.username }}</div>
                     </div>
-                </a>
-            </li>
-            {% empty %}
-            <li>No scheduled appointments.</li>
-            {% endfor %}
-        </ol>
-    </div>
-
-    <div class="w-full max-w-md p-4 bg-white border border-gray-100 rounded-lg shadow sm:p-8 dark:bg-gray-200 dark:border-gray-200">
-        <div class="flex items-center justify-between mb-4">
-            <h3>Pending Appointments</h3>
-            <a href="{% url 'appointments' %}" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
-                View all
-            </a>
+                    <a href="{% url 'complete_appointment' appointment.id %}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">Complete</a>
+                </li>
+                {% empty %}
+                <li class="py-4 text-gray-400">No scheduled appointments.</li>
+                {% endfor %}
+            </ol>
         </div>
-        <div class="flow-root">
-            <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Pending Appointments</h3>
+                <a href="{% url 'appointments' %}" class="text-blue-600 hover:underline">View all</a>
+            </div>
+            <ul class="divide-y divide-gray-200">
                 {% for appointment in pending_appointments %}
-                <li class="py-3 sm:py-4 bg-blue-700 dark:hover-bg-blue-900 p-4 my-3 rounded-md">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <img class="w-8 h-8 rounded-full" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-                        </div>
-                        <div class="flex-1 min-w-0 ms-4">
-                            <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                                {{ appointment.patient }}
-                            </p>
-                            <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                                {{ appointment.service }}
-                            </p>
-                        </div>
-                        <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                            <time class="mb-1 text-sm font-normal leading-none text-white">{{ appointment.date_time|date:"F j, Y" }}</time>
-                        </div>
+                <li class="py-4 flex items-center">
+                    <div class="flex-shrink-0">
+                        <img class="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name={{ appointment.patient|urlencode }}&background=0D8ABC&color=fff" alt="User">
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <div class="font-medium text-gray-900">{{ appointment.patient }}</div>
+                        <div class="text-gray-500 text-sm">{{ appointment.service }}</div>
+                        <div class="text-gray-400 text-xs">{{ appointment.date_time|date:"F j, Y" }}</div>
                     </div>
                 </li>
                 {% empty %}
-                <li>No pending appointments.</li>
+                <li class="py-4 text-gray-400">No pending appointments.</li>
                 {% endfor %}
             </ul>
         </div>
     </div>
 </div>
-
-<div class="mx-4 p-6">
-    <div>
-        <canvas id="myChart"></canvas>
-    </div>
-</div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Getting the time and date for the appointments
-    const now = new Date();
-    const today = document.getElementById('today');
-    today.innerHTML = `<h3>Today ${now.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    })}</h3>`;
-
-    // Chart.js initialization
-    const ctx = document.getElementById('myChart');
-    new Chart(ctx, {
-        type: 'bar',
+    // Patients Chart
+    const patientsCtx = document.getElementById('patientsChart').getContext('2d');
+    new Chart(patientsCtx, {
+        type: 'line',
         data: {
-            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            labels: ['1 Jun', '8 Jun', '15 Jun', '22 Jun', '29 Jun'],
             datasets: [{
-                label: '# of Votes', 
-                data: [12, 19, 3, 5, 2, 3],
-                borderWidth: 1
+                label: 'Patients',
+                data: [0, 100, 300, 600, 900],
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.4
             }]
         },
         options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
             scales: {
-                y: {
-                    beginAtZero: true
+                y: { beginAtZero: true }
+            }
+        }
+    });
+    // Room Chart
+    const roomCtx = document.getElementById('roomChart').getContext('2d');
+    new Chart(roomCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [
+                {
+                    label: 'General Room',
+                    data: [700, 1000, 400, 1000, 400, 1000, 800],
+                    backgroundColor: '#6366f1'
+                },
+                {
+                    label: 'Private Room',
+                    data: [400, 200, 800, 200, 800, 200, 700],
+                    backgroundColor: '#22c55e'
                 }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: true }
             }
         }
     });

@@ -2,6 +2,11 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto mt-10 bg-gray-800 text-gray-200 p-8 rounded-lg shadow-lg">
+    {% if user.branch and user.user_type != 1 %}
+    <div class="mb-4 text-gray-300">
+        <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+    </div>
+    {% endif %}
     <div class="flex justify-between items-end">
         <h1 class="text-2xl font-bold text-white mb-6">Superior Dental Solutions Limited</h1>
         <!-- If payment status is paid then put print receipt button-->
@@ -36,8 +41,11 @@
         <p><span class="font-medium">Status:</span> 
             <span class="px-3 py-1 text-xs font-bold text-white {% if invoice.status == 'paid' %} bg-green-600 {% elif invoice.status == 'partially paid' %} bg-yellow-600 {% else %} bg-gray-600 {% endif %} rounded">
                 {{ invoice.status|title }}
-            </span>
+            <!-- </span>
         </p>
+        {% if invoice.status == 'partially paid' %}
+        <p><span class="font-medium">Balance:</span> <span class="text-yellow-400">K{{ remaining_balance|floatformat:2 }}</span></p>
+        {% endif %} -->
     </div>
 
     <!-- Services Table -->
@@ -56,7 +64,7 @@
                 <tbody>
                     {% for item in services_with_subtotals %}
                     <tr class="border-t border-gray-700">
-                        <td class="px-4 py-2">{{ item.services}}</td>
+                        <td class="px-4 py-2">{{ item.service.name }}</td>
                         <td class="px-4 py-2 text-center">{{ item.quantity }}</td>
                         <td class="px-4 py-2 text-right">K{{ item.price_at_time|floatformat:2 }}</td>
                         <td class="px-4 py-2 text-right">K{{ item.subtotal|floatformat:2 }}</td>
@@ -93,9 +101,11 @@
     <div class="bg-gray-800 text-gray-200 p-6 rounded-lg shadow-lg w-96">
         <h2 class="text-xl font-bold text-white mb-4">Choose Payment Type</h2>
         <div class="space-y-4">
+            {% if invoice.status != 'partially paid' %}
             <button id="full-payment-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
                 Full Payment
             </button>
+            {% endif %}
             <button id="partial-payment-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
                 Partial Payment
             </button>
@@ -120,29 +130,35 @@
     });
 
     // Handle Full Payment
-    fullPaymentBtn.addEventListener('click', () => {
-        const invoiceId = {{ invoice.id }};  // Ensure this is not empty
-        if (!invoiceId) {
-            console.error("Invoice ID is missing or invalid.");
-            return;
-        }
-        window.location.href = "{% url 'make_full_payment' invoice_id=invoice.id %}";
-    });
+    if (fullPaymentBtn) {
+        fullPaymentBtn.addEventListener('click', () => {
+            const invoiceId = {{ invoice.id }};  // Ensure this is not empty
+            if (!invoiceId) {
+                console.error("Invoice ID is missing or invalid.");
+                return;
+            }
+            window.location.href = "{% url 'make_full_payment' invoice_id=invoice.id %}";
+        });
+    }
 
     // Handle Partial Payment
-    partialPaymentBtn.addEventListener('click', () => {
-        const invoiceId = {{ invoice.id }};  // Ensure this is not empty
-        if (!invoiceId) {
-            console.error("Invoice ID is missing or invalid.");
-            return;
-        }
-        window.location.href = "{% url 'make_partial_payment' invoice_id=invoice.id %}";
-    });
+    if (partialPaymentBtn) {
+        partialPaymentBtn.addEventListener('click', () => {
+            const invoiceId = {{ invoice.id }};  // Ensure this is not empty
+            if (!invoiceId) {
+                console.error("Invoice ID is missing or invalid.");
+                return;
+            }
+            window.location.href = "{% url 'make_partial_payment' invoice_id=invoice.id %}";
+        });
+    }
 
     // Close modal when "Cancel" is clicked
-    cancelPaymentBtn.addEventListener('click', () => {
-        paymentModal.classList.add('hidden');
-    });
+    if (cancelPaymentBtn) {
+        cancelPaymentBtn.addEventListener('click', () => {
+            paymentModal.classList.add('hidden');
+        });
+    }
 </script>
 
 {% endblock %}

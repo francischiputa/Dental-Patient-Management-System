@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from branches.models import Branch
 
 class Supplier(models.Model):
     name = models.CharField(max_length=100, db_index=True)
@@ -49,6 +50,14 @@ class InventoryItem(models.Model):
         related_name='supplied_items'
     )
     last_updated = models.DateTimeField(auto_now=True)
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='inventory_items'
+    )
+    test_field = models.BooleanField(default=False)  # Dummy field for migration test
 
     @property
     def is_low_stock(self):

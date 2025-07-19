@@ -1,6 +1,6 @@
 from django.db import models
 from patient.models import Patient
-from user_accounts.models import Dentist  # Correctly import the Dentist model
+from dentist.models import Dentist  # Changed import to dentist app
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from user_accounts.models import CustomUser
 from branches.models import Branch  # Import the Branch model
@@ -9,7 +9,7 @@ from branches.models import Branch  # Import the Branch model
 
 class Appointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    dentist = models.ForeignKey(Dentist, on_delete=models.CASCADE, blank=True, null=True)
+    dentist = models.ForeignKey(Dentist, on_delete=models.CASCADE, blank=True, null=True)  # Now using dentist.models.Dentist
     date_time = models.DateTimeField()
     status_choices = [('Pending', 'Pending'), ('Scheduled', 'Scheduled'), ('Completed', 'Completed'), ('Cancelled', 'Cancelled')]
     status = models.CharField(max_length=20, choices=status_choices, default='Pending')

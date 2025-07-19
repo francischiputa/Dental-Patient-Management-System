@@ -8,6 +8,7 @@ from appointment.models import Appointment, Service
 import uuid
 from branches.models import Branch  # Import the Branch model
 from dentist.models import CustomUser as User
+from django.db import IntegrityError
 
 class Invoice(models.Model):
     STATUS_CHOICES = [
@@ -200,64 +201,17 @@ class Receipt(models.Model):
         null=True,
         help_text="Additional notes for the receipt."
     )
-def save(self, *args, **kwargs):
-    print(f"Receipt save method called")  # Debug
-    
-    # Generate a unique receipt number if it doesn't exist
-    if not self.receipt_number:
-        self.receipt_number = f"RECEIPT-{uuid.uuid4().hex[:8]}"
-        print(f"Generated receipt number: {self.receipt_number}")  # Debug
-    
-    # Automatically calculate the total amount
-    # Use hasattr to safely check if payment exists
-    if hasattr(self, 'payment') and self.payment_id is not None:
-        print("Setting total from payment")  # Debug
-        try:
-            self.total_amount = self.payment.amount
-        except Payment.DoesNotExist:
-            print("Payment does not exist")  # Debug
-            pass
-    elif self.invoice and not self.total_amount:
-        print("Setting total from invoice")  # Debug
-        self.total_amount = self.invoice.total_amount
-    elif not self.total_amount:
-        print("No total amount available, setting to 0")  # Debug
-        self.total_amount = Decimal('0.00')
-        
-    print(f"Total amount: {self.total_amount}")  # Debug
-    
-    # Ensure the branch is set correctly
-    if not self.branch:
-        print("No branch set, trying to determine branch")  # Debug
-        
-        # Set the branch from the payment's branch (if available)
-        if hasattr(self, 'payment') and self.payment_id is not None:
-            try:
-                if hasattr(self.payment, 'branch') and self.payment.branch:
-                    print("Setting branch from payment")  # Debug
-                    self.branch = self.payment.branch
-            except Payment.DoesNotExist:
-                print("Payment does not exist for branch setting")  # Debug
-                pass
-        
-        # Alternatively, set the branch from the invoice's branch (if available)
-        if not self.branch and self.invoice and self.invoice.branch:
-            print("Setting branch from invoice")  # Debug
-            self.branch = self.invoice.branch
-            
-        if not self.branch:
-            print("Warning: No branch could be determined")  # Debug
-            # Don't raise an error, just let it be None since branch is nullable
-    
-    print(f"Final branch: {self.branch}")  # Debug
-    print("About to call super().save()")  # Debug
-    
-    try:
+
+    def save(self, *args, **kwargs):
+        if not self.receipt_number:
+            for _ in range(5):  # Try up to 5 times to avoid a collision
+                candidate = f"RECEIPT-{uuid.uuid4().hex[:8]}"
+                if not Receipt.objects.filter(receipt_number=candidate).exists():
+                    self.receipt_number = candidate
+                    break
+            else:
+                raise ValueError("Could not generate a unique receipt number after 5 attempts.")
         super().save(*args, **kwargs)
-        print("Receipt saved successfully")  # Debug
-    except Exception as save_error:
-        print(f"Error in super().save(): {str(save_error)}")  # Debug
-        raise  # Re-raise the error
 
 class ReceiptItem(models.Model):
     receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE)

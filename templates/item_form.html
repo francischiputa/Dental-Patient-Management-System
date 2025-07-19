@@ -29,8 +29,13 @@
   <!-- Form Card -->
   <div class="bg-white shadow rounded-lg overflow-hidden">
     <div class="px-4 py-5 sm:p-6">
-      <form method="post" class="space-y-8">
+      <form method="post" action="{% url 'item_create' %}" class="space-y-8">
         {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
         
         <!-- Basic Information -->
         <div class="border-b border-gray-200 pb-6">

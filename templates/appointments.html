@@ -1,73 +1,72 @@
 {% extends 'base.html' %}
 {% block title %} Appointments {% endblock %}
 {% block content %}
-<!-- Success Message -->
-{% if request.session.appointment_created %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        Swal.fire({
-            title: 'Success!',
-            text: 'Appointment has been created successfully!',
-            icon: 'success',
-            confirmButtonText: 'OK'
-        }).then((result) => {
-            // Clear the session variable after displaying the message
-            fetch("{% url 'clear_appointment_created_flag' %}", {
-                method: 'POST',
-                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+<div class="p-6">
+    <!-- Success Message -->
+    {% if request.session.appointment_created %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Appointment has been created successfully!',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then((result) => {
+                fetch("{% url 'clear_appointment_created_flag' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                });
             });
         });
-    });
-</script>
-{% endif %}
-
-<!-- Branch Filter Dropdown (Visible Only to Admins) -->
-<div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold">Appointments</h1>
-    {% if user.user_type == 1 %}
-    <form method="get" class="mb-3">
-        <label for="branch" class="mr-2 text-gray-700">Filter by Branch:</label>
-        <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
-            <option value="">All Branches</option>
-            {% for branch in branches %}
-                <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>
-                    {{ branch.name }}
-                </option>
-            {% endfor %}
-        </select>
-    </form>
+    </script>
     {% endif %}
-</div>
 
-<!-- Display User's Branch (Non-Admin Users) -->
-{% if user.branch and user.user_type != 1 %}
-<div class="mb-4 text-gray-700">
-    <p><strong>Branch:</strong> {{ user.branch.name }}</p>
-</div>
-{% endif %}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">Appointments</h1>
+        <div class="flex items-center gap-2 mt-4 md:mt-0">
+            {% if user.user_type == 1 %}
+            <form method="get" class="">
+                <label for="branch" class="mr-2 text-gray-700">Branch:</label>
+                <select name="branch" id="branch" onchange="this.form.submit()" class="p-2 border rounded text-gray-900">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}" {% if branch.id|stringformat:"s" == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% if user.branch and user.user_type != 1 %}
+    <div class="mb-4 text-gray-700">
+        <p><strong>Branch:</strong> {{ user.branch.name }}</p>
+    </div>
+    {% endif %}
 
-<!-- Tab Buttons -->
-<div class="flex gap-4 mb-4">
-    <button id="tab-pending" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('pending')">Pending</button>
-    <button id="tab-scheduled" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('scheduled')">Scheduled</button>
-    <button id="tab-completed" class="tab-button bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="switchTab('completed')">Completed</button>
-</div>
+    <!-- Tab Buttons -->
+    <div class="flex gap-2 mb-6 bg-gray-100 rounded-lg p-1 w-full max-w-xl mx-auto shadow">
+        <button id="tab-pending" class="tab-button flex-1 py-2 rounded-lg transition text-gray-700" onclick="switchTab('pending')">Pending</button>
+        <button id="tab-scheduled" class="tab-button flex-1 py-2 rounded-lg transition text-gray-700" onclick="switchTab('scheduled')">Scheduled</button>
+        <button id="tab-completed" class="tab-button flex-1 py-2 rounded-lg transition text-gray-700" onclick="switchTab('completed')">Completed</button>
+    </div>
 
-<!-- Pending Appointments Table -->
-<div id="table-pending" class="tab-content">
-    {% include 'appointment_table.html' with appointments=pending_appointments table_type='pending' %}
+    <!-- Appointment Tables as Cards -->
+    <div id="table-pending" class="tab-content transition-all duration-300">
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            {% include 'appointment_table.html' with appointments=pending_appointments table_type='pending' %}
+        </div>
+    </div>
+    <div id="table-scheduled" class="tab-content hidden transition-all duration-300">
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            {% include 'appointment_table.html' with appointments=scheduled_appointments table_type='scheduled' %}
+        </div>
+    </div>
+    <div id="table-completed" class="tab-content hidden transition-all duration-300">
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            {% include 'appointment_table.html' with appointments=completed_appointments table_type='completed' %}
+        </div>
+    </div>
 </div>
-
-<!-- Scheduled Appointments Table -->
-<div id="table-scheduled" class="tab-content hidden">
-    {% include 'appointment_table.html' with appointments=scheduled_appointments table_type='scheduled' %}
-</div>
-
-<!-- Completed Appointments Table -->
-<div id="table-completed" class="tab-content hidden">
-    {% include 'appointment_table.html' with appointments=completed_appointments table_type='completed' %}
-</div>
-
 <!-- JavaScript for Tab Switching -->
 <script>
     function switchTab(tabName) {

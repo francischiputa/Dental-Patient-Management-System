@@ -10,7 +10,7 @@ from patient.models import Patient
 from appointment.models import Appointment, Service, Treatment, Diagnosis
 from django.contrib import messages
 from user_accounts.forms import CustomUserCreationForm, DentistForm, StaffForm
-from user_accounts.models import CustomUser, Dentist, Staff
+from dentist.models import Dentist  # Changed import to dentist app
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse, Http404, HttpResponseBadRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -158,16 +158,44 @@ def DentistsPage(request):
 
 @login_required
 def Dashboard(request):
-    logined_user = request.user.username
-    total_appointments = Appointment.objects.all().count()
-    total_patients = Patient.objects.all().count()
-    scheduled_appointments = Appointment.objects.filter(status='Scheduled')
-    pending_appointments = Appointment.objects.filter(status='Pending')
-    completed_appointments = Appointment.objects.filter(status='Completed')
-    cancelled_appointments = Appointment.objects.filter(status='Cancelled')
-    total_quotations = Quotation.objects.all().count()
-    return render(request, 'dashboard.html', {'scheduled_appointments': scheduled_appointments, 'pending_appointments': pending_appointments, 'completed_appointments': completed_appointments, 'cancelled_appointments': cancelled_appointments, 'logined_user': logined_user, 'total_appointments': total_appointments, 'total_patients': total_patients, 'total_appointments': total_appointments
-                                              , 'total_quotations': total_quotations})
+    user = request.user
+    now = timezone.now()
+    hour = now.hour
+    if hour < 12:
+        greeting = "Good Morning"
+    elif hour < 18:
+        greeting = "Good Afternoon"
+    else:
+        greeting = "Good Evening"
+
+    # Branch-based filtering
+    is_admin = hasattr(user, 'user_type') and user.user_type == 1
+    user_branch = getattr(user, 'branch', None)
+    branch_filter = {}
+    if not is_admin and user_branch:
+        branch_filter = {'branch': user_branch}
+
+    total_appointments = Appointment.objects.filter(**branch_filter).count()
+    total_patients = Patient.objects.filter(**branch_filter).count()
+    scheduled_appointments = Appointment.objects.filter(status='Scheduled', **branch_filter)
+    pending_appointments = Appointment.objects.filter(status='Pending', **branch_filter)
+    completed_appointments = Appointment.objects.filter(status='Completed', **branch_filter)
+    cancelled_appointments = Appointment.objects.filter(status='Cancelled', **branch_filter)
+    total_quotations = Quotation.objects.filter(**branch_filter).count() if not is_admin and user_branch else Quotation.objects.all().count()
+
+    context = {
+        'greeting': greeting,
+        'user': user,
+        'branch': user_branch,
+        'total_appointments': total_appointments,
+        'total_patients': total_patients,
+        'scheduled_appointments': scheduled_appointments,
+        'pending_appointments': pending_appointments,
+        'completed_appointments': completed_appointments,
+        'cancelled_appointments': cancelled_appointments,
+        'total_quotations': total_quotations,
+    }
+    return render(request, 'dashboard.html', context)
     
 @login_required
 def PatientsPage(request):
@@ -245,29 +273,39 @@ def CreatePatient(request):
 
 
 def AppointmentsPage(request):
-    # Retrieve pending appointments
-    pending_appointments = Appointment.objects.filter(status='Pending')
-    scheduled_appointments = Appointment.objects.filter(status='Scheduled')
-    completed_appointments = Appointment.objects.filter(status='Completed')
-    
-    # Retrieve dentists with user_type=3
-    dentists = Dentist.objects.filter(user__user_type=3)
-    
-    # Retrieve services with valid name and price
+    user = request.user
+    branches = Branch.objects.all()
+    branch_id = None
+
+    # Admins can filter by any branch
+    if hasattr(user, 'user_type') and user.user_type == 1:
+        branch_id = request.GET.get('branch')
+    # Non-admins: force branch to user's branch
+    elif hasattr(user, 'branch') and user.branch:
+        branch_id = str(user.branch.id)
+    # else: branch_id remains None (no filtering)
+
+    filters = {}
+    if branch_id:
+        filters['branch_id'] = branch_id
+
+    pending_appointments = Appointment.objects.filter(status='Pending', **filters)
+    scheduled_appointments = Appointment.objects.filter(status='Scheduled', **filters)
+    completed_appointments = Appointment.objects.filter(status='Completed', **filters)
+
+    dentists = Dentist.objects.filter(user__user_type=2)
     services = Service.objects.filter(name__isnull=False, price__isnull=False)
 
-    # Pass all data to the template
-    return render(
-        request,
-        'appointments.html',
-        {
-             'pending_appointments': pending_appointments,
-            'completed_appointments': completed_appointments,   # Retrieve completed appointments
-            'scheduled_appointments': scheduled_appointments,  # Retrieve scheduled appointments
-            'dentists': dentists,
-            'services': services,
-        }
-    )
+    context = {
+        'pending_appointments': pending_appointments,
+        'completed_appointments': completed_appointments,
+        'scheduled_appointments': scheduled_appointments,
+        'dentists': dentists,
+        'services': services,
+        'branches': branches,
+        'selected_branch_id': branch_id,
+    }
+    return render(request, 'appointments.html', context)
 
 
 def index(request):
@@ -542,10 +580,29 @@ def assign_dentist(request):
 
 @login_required
 def scheduled_appointment_view(request):
-    appointments = Appointment.objects.all()
+    user = request.user
+    branches = Branch.objects.all()
+    branch_id = None
+
+    # Admins can filter by any branch
+    if hasattr(user, 'user_type') and user.user_type == 1:
+        branch_id = request.GET.get('branch')
+    # Non-admins: force branch to user's branch
+    elif hasattr(user, 'branch') and user.branch:
+        branch_id = str(user.branch.id)
+
+    filters = {}
+    if branch_id:
+        filters['branch_id'] = branch_id
+
+    appointments = Appointment.objects.filter(**filters)
     services = Service.objects.all()
-    services = Service.objects.all()
-    return render(request, 'schuled_appointment.html', {'appointments':appointments, 'services':services})
+    return render(request, 'schuled_appointment.html', {
+        'appointments': appointments,
+        'services': services,
+        'branches': branches,
+        'selected_branch_id': branch_id,
+    })
 
 
 def treatment_request(request, patient_id):
@@ -838,18 +895,15 @@ def delete_quotation(request, pk):
 
 @login_required
 def invoice_detail_view(request, invoice_id):
-    # Fetch the invoice object
     invoice = get_object_or_404(Invoice, pk=invoice_id)
+    invoice.refresh_from_db()  # Ensure up-to-date data
 
-    # Retrieve all services associated with the invoice
     services_with_subtotals = InvoiceService.objects.filter(invoice=invoice).annotate(
         subtotal=F('price_at_time') * F('quantity')
     )
 
-    # Calculate remaining balance
     remaining_balance = invoice.get_remaining_balance()
 
-    # Render the template with the context data
     return render(request, 'invoice_detail.html', {
         'invoice': invoice,
         'services_with_subtotals': services_with_subtotals,
@@ -922,9 +976,23 @@ def create_payment(request, invoice_id):
 
 # Create invoice template
 def create_invoice_list_view(request):
-    patients = Patient.objects.filter(is_patient=True)
+    user = request.user
+    branches = Branch.objects.all()
+    branch_id = None
+    # Admins can filter by any branch
+    if hasattr(user, 'user_type') and user.user_type == 1:
+        branch_id = request.GET.get('branch')
+    # Non-admins: force branch to user's branch
+    elif hasattr(user, 'branch') and user.branch:
+        branch_id = str(user.branch.id)
+    filters = {}
+    if branch_id:
+        filters['branch_id'] = branch_id
+    patients = Patient.objects.filter(is_patient=True, **filters)
     return render(request, 'create_invoice.html', {
-        'patients': patients
+        'patients': patients,
+        'branches': branches,
+        'selected_branch_id': branch_id,
     })
 
 
@@ -1025,9 +1093,23 @@ def patient_invoice(request, patient_id):
 
 
 def create_quotation_list(request):
-    patients = Patient.objects.all()
+    user = request.user
+    branches = Branch.objects.all()
+    branch_id = None
+    # Admins can filter by any branch
+    if hasattr(user, 'user_type') and user.user_type == 1:
+        branch_id = request.GET.get('branch')
+    # Non-admins: force branch to user's branch
+    elif hasattr(user, 'branch') and user.branch:
+        branch_id = str(user.branch.id)
+    filters = {}
+    if branch_id:
+        filters['branch_id'] = branch_id
+    patients = Patient.objects.filter(**filters)
     return render(request, 'create_quotation_list.html', {
-        'patients': patients
+        'patients': patients,
+        'branches': branches,
+        'selected_branch_id': branch_id,
     })
 
 
@@ -1263,7 +1345,7 @@ def full_payment(request):
         invoice.save()
 
         messages.success(request, 'Payment made successfully!')
-        return redirect('invoice_list')
+        return redirect('invoice_details_view', invoice_id=invoice.id)
 
 def partial_payment_form(request):
    return(request, 'partial_payment_form.html')
@@ -1280,12 +1362,10 @@ def make_partial_payment(request, invoice_id):
     remaining_balance = invoice.total_amount - total_payments
 
     if remaining_balance <= 0:
-        messages.error(request, 'Invoice is already fully paid.')
-        #Change the status to paid
         invoice.status = 'paid'
         invoice.save()
-        # Redirect to the invoice list or detail page
-        return redirect('invoice_list')
+        messages.success(request, 'Invoice is already fully paid. The amount is fully settled!')
+        return redirect('invoice_details_view', invoice_id=invoice.id)
 
     # Render the partial payment page with the remaining balance
     return render(request, 'partial_payment_form.html', {
@@ -1353,7 +1433,7 @@ def partial_payment(request):
                 payment_method=payment_method,
                 transaction_id=transaction_id,
                 notes=notes,
-                status='partial',
+                status='completed',
                 processed_by=request.user
             )
         except Exception as e:
@@ -1373,7 +1453,7 @@ def partial_payment(request):
 
         # Success message
         messages.success(request, 'Partial payment made successfully!')
-        return redirect('invoice_list')
+        return redirect('invoice_details_view', invoice_id=invoice.id)
 
     # Handle GET requests (if applicable)
     return redirect('partial_payment_form')
@@ -1447,14 +1527,35 @@ def item_detail(request, pk):
 
 @login_required
 def item_create(request):
+    print("item_create view called, method:", request.method)
     if request.method == 'POST':
+        print("POST data:", request.POST)
         form = ItemForm(request.POST)
+        user = request.user
+        # Remove branch field for non-admins
+        if not (hasattr(user, 'user_type') and user.user_type == 1):
+            form.fields.pop('branch', None)
         if form.is_valid():
-            form.save()
+            item = form.save(commit=False)
+            # Non-admins: force branch to user's branch
+            if hasattr(user, 'user_type') and user.user_type != 1 and hasattr(user, 'branch') and user.branch:
+                item.branch = user.branch
+            # Set available_stock to quantity if not set
+            if not item.available_stock:
+                item.available_stock = item.quantity or 0
+            # Admins: branch can be set via the form
+            item.save()
+            print("Item saved:", item)
             return redirect('item_list')
+        else:
+            print("Form errors:", form.errors)
     else:
         form = ItemForm()
-    return render(request, 'forms.html', {'form': form, 'title': 'Add New Item'})
+        user = request.user
+        # Remove branch field for non-admins
+        if not (hasattr(user, 'user_type') and user.user_type == 1):
+            form.fields.pop('branch', None)
+    return render(request, 'item_form.html', {'form': form, 'title': 'Add New Item'})
 
 
 
@@ -1641,7 +1742,7 @@ def turn_invoice_to_receipt(request, invoice_id):
         if existing_receipt:
             print("Receipt already exists - redirecting")  # Debug
             messages.warning(request, "A receipt for this invoice already exists.")
-            return redirect('invoice_list')
+            return redirect('receipt_list')
         
         # Determine the branch
         receipt_branch = invoice.branch
@@ -1668,7 +1769,7 @@ def turn_invoice_to_receipt(request, invoice_id):
             'notes': "Generated from invoice conversion"
         }
         
-        print(f"Receipt data: {receipt_data}")  # Debug
+        print(f"Receipt data: {receipt_data}")
         
         receipt = Receipt(**receipt_data)
         print("Receipt object created, about to save...")  # Debug
@@ -1820,7 +1921,6 @@ def receipt_list(request):
 
 @login_required
 def receipt_detail(request, pk):
-    # Fetch the receipt object using the provided primary key (pk)
     receipt = get_object_or_404(Receipt, id=pk)
     
     # Fetch the associated invoice (if any)
@@ -1892,7 +1992,13 @@ def transaction_create(request, pk):
             transaction.item = item  # Set the item for the transaction
             transaction.user = request.user  # Set the user who performed the transaction
             transaction.save()
-            messages.success(request, "Transaction recorded successfully!")
+            # Update inventory stock
+            if transaction.transaction_type == 'OUT':
+                item.quantity -= transaction.quantity
+            else:
+                item.quantity += transaction.quantity
+            item.save()
+            messages.success(request, f"Transaction recorded successfully! Current stock: {item.quantity}")
             return redirect('item_detail', pk=item.pk)  # Redirect to the item detail page
         else:
             messages.error(request, "Please correct the errors below.")
@@ -1978,26 +2084,24 @@ def receipt_detail(request, pk):
     receipt = get_object_or_404(Receipt, pk=pk)
     invoice = receipt.invoice  # Get the linked invoice
 
-    # Use the invoice's pre-calculated values
     subtotal = invoice.total_amount or Decimal('0.00')
     tax = Decimal('0.00')
     grand_total = invoice.total_amount or Decimal('0.00')
 
-    # Optionally get the invoice items for display
-    items_with_totals = []
-    for item in invoice.invoiceservice_set.all():
-        price = item.price_at_time or Decimal('0.00')
-        total_price = item.quantity * price
-        items_with_totals.append({
-            'item': item.service if item.service else None,
-            'quantity': item.quantity,
+    items = []
+    for inv_service in invoice.invoiceservice_set.all():
+        price = inv_service.price_at_time or Decimal('0.00')
+        total_price = inv_service.quantity * price
+        items.append({
+            'service_name': inv_service.service.name if inv_service.service else '',
+            'quantity': inv_service.quantity,
             'price': price,
             'total_price': total_price
         })
 
     return render(request, 'receipt_detail.html', {
         'receipt': receipt,
-        'items': items_with_totals,
+        'items': items,
         'subtotal': subtotal,
         'tax': tax,
         'grand_total': grand_total

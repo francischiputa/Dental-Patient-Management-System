@@ -5,6 +5,9 @@ class ItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = '__all__'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['available_stock'].required = False
 
 class SupplierForm(forms.ModelForm):
     class Meta:

@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-md-12">
             <h1 class="font-bold text-md">Patient Invoice</h1>
-            <form class="max-w-4xl mx-auto bg-slate-800 p-6 px-12 rounded-lg shadow-lg mt-10" action="{% url 'create_quotation' %}" method="POST">
+            <form class="max-w-4xl mx-auto bg-slate-800 p-6 px-12 rounded-lg shadow-lg mt-10" action="{% url 'create_invoice' %}" method="POST">
                 {% csrf_token %}
                 
                 <!-- Patient Information -->
@@ -61,12 +61,12 @@
                 
                 <div class="mb-5">
                     <label for="quantities" class="block mb-2 text-sm font-medium text-gray-300">Quantities</label>
-                    <input type="text" id="quantities" name="quantities" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                    <input type="text" id="quantities" name="quantities" value="1" class="shadow-sm bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
                 </div>
                 
 
                 <!-- Submit Button -->
-                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-8 py-3 text-center w-full sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 mt-4">Create Quotation</button>
+                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-8 py-3 text-center w-full sm:w-auto dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 mt-4">Create Invoice</button>
             </form>
         </div>
     </div>
@@ -78,20 +78,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const serviceSelect = document.getElementById('services');
     const priceInput = document.getElementById('price');
     const priceContainer = document.getElementById('price-container');
+    const quantitiesInput = document.getElementById('quantities');
 
-    if (!serviceSelect || !priceInput || !priceContainer) {
+    if (!serviceSelect || !priceInput || !priceContainer || !quantitiesInput) {
         console.error('Required elements not found in the DOM.');
         return;
     }
 
-    // Function to update the price field
-    function updatePrice() {
+    // Function to update the price field and quantities
+    function updatePriceAndQuantities() {
         const selectedOptions = Array.from(serviceSelect.selectedOptions);
         let totalPrice = 0;
+        let quantities = [];
 
         selectedOptions.forEach(option => {
             const price = parseFloat(option.getAttribute('data-price')) || 0;
             totalPrice += price;
+            quantities.push(1); // Default quantity is 1 for each selected service
         });
 
         if (totalPrice > 0) {
@@ -101,13 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
             priceInput.value = ''; // Clear the price field
             priceContainer.style.display = 'none'; // Hide the price container
         }
+
+        // Set the quantities input as a comma-separated list of 1s
+        if (quantities.length > 0) {
+            quantitiesInput.value = quantities.join(',');
+        } else {
+            quantitiesInput.value = '1';
+        }
     }
 
     // Listen for changes in the service selection
-    serviceSelect.addEventListener('change', updatePrice);
+    serviceSelect.addEventListener('change', updatePriceAndQuantities);
 
-    // Initialize the price field on page load
-    updatePrice();
+    // Initialize the price field and quantities on page load
+    updatePriceAndQuantities();
 });
 </script>
 {% endblock %}

@@ -5,34 +5,45 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ current_month }}</h1>
-  
-<!-- Weekday Headers -->
-{% for day in week_days %}
-  <div class="text-center font-semibold text-gray-500 py-2">{{ day }}</div>
-{% endfor %}
-
-<!-- Empty days for alignment -->
-{% with ""|center:today.weekday as range %}
-  {% for _ in range %}
-    <div class="border border-transparent"></div>
-  {% endfor %}
-{% endwith %}
-
-<!-- Calendar Days -->
-{% for item in days_with_appointments %}
-  <div class="min-h-24 border border-gray-200 p-2">
-    <div class="text-sm font-medium text-gray-900">{{ item.day }}</div>
-    <div class="mt-1 space-y-1">
-      {% for appt in item.appointments %}
-        <div class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
-          {{ appt.date_time|date:"H:i" }} - {{ appt.service }}
-        </div>
-      {% empty %}
-        <div class="text-xs text-gray-400">No appointments</div>
-      {% endfor %}
-    </div>
+  {% if user.branch and user.user_type != 1 %}
+  <div class="mb-4 text-gray-700">
+      <p><strong>Branch:</strong> {{ user.branch.name }}</p>
   </div>
-{% endfor %}
+  {% endif %}
+  <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ current_month }}</h1>
+  
+  <!-- Calendar Grid -->
+  <div class="grid grid-cols-7 gap-2 bg-white rounded-lg shadow p-4">
+    <!-- Weekday Headers -->
+    {% for day in week_days %}
+      <div class="text-center font-semibold text-indigo-700 py-2 uppercase tracking-wide border-b border-indigo-100 bg-indigo-50 rounded-t">{{ day }}</div>
+    {% endfor %}
 
+    <!-- Empty days for alignment -->
+    {% with ""|center:today.weekday as range %}
+      {% for _ in range %}
+        <div class="border border-transparent"></div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- Calendar Days -->
+    {% for item in days_with_appointments %}
+      <div class="min-h-24 border border-gray-200 p-2 rounded-lg bg-gray-50 hover:bg-indigo-50 transition-colors flex flex-col">
+        <div class="text-sm font-bold text-indigo-900 mb-1 flex items-center justify-between">
+          <span>{{ item.day }}</span>
+        </div>
+        <div class="mt-1 space-y-1 flex-1">
+          {% for appt in item.appointments %}
+            <div class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded shadow-sm flex items-center gap-1">
+              <span class="font-semibold">{{ appt.date_time|date:"H:i" }}</span>
+              <span class="truncate">- {{ appt.service }}</span>
+            </div>
+          {% empty %}
+            <div class="text-xs text-gray-400">No appointments</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}

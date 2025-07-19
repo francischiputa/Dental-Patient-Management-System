@@ -3,63 +3,7 @@
 
 {% block content %}
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2 @11"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            // Collect form data
-            const formData = new FormData(form);
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-
-            // Send AJAX request
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: result.message,
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        window.location.href = '{% url "item_detail" item.pk %}';
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: result.message,
-                        confirmButtonText: 'OK'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'An unexpected error occurred.',
-                    confirmButtonText: 'OK'
-                });
-            });
-        });
-    }
-});
-</script>
+<!-- Remove AJAX script for classic Django experience -->
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
@@ -74,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   <div class="bg-white shadow rounded-lg overflow-hidden">
     <div class="px-4 py-5 sm:p-6">
-      <form method="post" action="{% url 'record_inventory_transaction' item_id=item.pk %}" class="space-y-6">
+      <form method="post" action="{% url 'transaction_create' item.pk %}" class="space-y-6">
     {% csrf_token %}
     
     <div class="grid grid-cols-1 gap-6">
