@@ -533,33 +533,12 @@ setTimeout(() => {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-  const currentPath = window.location.pathname;
-  const links = document.querySelectorAll(".nav-link");
-
-  links.forEach(link => {
-    const href = link.getAttribute("href");
-    if (href) {
-      // Normalize both paths by trimming trailing slashes
-      const normalizedHref = href.endsWith('/') ? href.slice(0, -1) : href;
-      const normalizedPath = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
-
-      if (normalizedPath === normalizedHref) {
-        link.classList.remove("text-indigo-200", "hover:bg-indigo-700", "hover:text-white");
-        link.classList.add("bg-indigo-700", "text-white");
-      }
-    }
-  });
-});
-
-
-
-  // Dropdown toggle
+  // Dropdown toggle for Inventory
   document.querySelectorAll('[data-dropdown-toggle]').forEach(toggle => {
     toggle.addEventListener('click', () => {
       const submenuId = toggle.getAttribute('data-dropdown-toggle');
       const submenu = document.getElementById(submenuId);
       submenu.classList.toggle('hidden');
-      
       // Rotate chevron icon
       const icon = toggle.querySelector('svg:last-child');
       if (icon) {
@@ -569,26 +548,36 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Active state for nested items
-  document.addEventListener("DOMContentLoaded", function () {
-    const currentPath = window.location.pathname;
-    const links = document.querySelectorAll(".nav-link");
-    
-    links.forEach(link => {
-      const href = link.getAttribute("href");
-      if (href && currentPath.startsWith(href)) {
-        // Add active styles to parent if any child is active
-        let parent = link.closest('li');
-        if (parent && parent.querySelector('ul')) {
-          parent.querySelector('ul').classList.remove('hidden');
-          parent.querySelector('svg:last-child')?.classList.add('rotate-180');
-        }
-        
-        // Add active styles to current link
-        link.classList.remove('text-indigo-200', 'hover:bg-indigo-700', 'hover:text-white');
-        link.classList.add('bg-indigo-700', 'text-white');
+  const currentPath = window.location.pathname;
+  const links = document.querySelectorAll(".nav-link");
+  links.forEach(link => {
+    const href = link.getAttribute("href");
+    if (href && currentPath.startsWith(href)) {
+      // Add active styles to parent if any child is active
+      let parent = link.closest('li');
+      if (parent && parent.querySelector('ul')) {
+        parent.querySelector('ul').classList.remove('hidden');
+        parent.querySelector('svg:last-child')?.classList.add('rotate-180');
       }
-    });
+      // Add active styles to current link
+      link.classList.remove('text-indigo-200', 'hover:bg-indigo-700', 'hover:text-white');
+      link.classList.add('bg-indigo-700', 'text-white');
+    }
   });
+
+  // Highlight current nav link (non-nested)
+  const normalizedPath = currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
+  links.forEach(link => {
+    const href = link.getAttribute("href");
+    if (href) {
+      const normalizedHref = href.endsWith('/') ? href.slice(0, -1) : href;
+      if (normalizedPath === normalizedHref) {
+        link.classList.remove("text-indigo-200", "hover:bg-indigo-700", "hover:text-white");
+        link.classList.add("bg-indigo-700", "text-white");
+      }
+    }
+  });
+});
 </script>
 
 
