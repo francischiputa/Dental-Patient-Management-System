@@ -446,7 +446,9 @@ function toggleDropdown(event) {
 
 <script>
   const notifications = document.getElementById('notifications');
-  const ws = new WebSocket('ws://' + window.location.host + '/ws/notifications/');
+  // Use wss:// for secure websocket if on https
+  const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/notifications/');
 
   ws.onmessage = function(event) {
       const data = JSON.parse(event.data);
